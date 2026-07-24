@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Game](https://img.shields.io/badge/download-.love-blue)](apex-legends.love)
 
+> **⚠️ BETA** — This game is in active development. Features may change, and feedback is welcome!
+
 A 2D space shooter built with [LÖVE](https://love2d.org/) (Lua 5.1). Fight waves of enemies, battle bosses, collect components, and build your ultimate ship in the hangar.
 
 ---
@@ -247,6 +249,15 @@ Active development. All core features are implemented:
 - **Audio**: "The Long Road Home" and "Waiting for the New Day" by [Rolemusic](https://freemusicarchive.org/music/rolemusic) (CC BY 4.0)
 - **Libraries**: [classic](https://github.com/rxi/classic), [lume](https://github.com/rxi/lume), [flux](https://github.com/rxi/flux) by rxi
 - **Built with**: [LÖVE](https://love2d.org/) game framework
+
+---
+
+## Support
+
+If you enjoy the game, there are two ways to support the project:
+
+- **Contribute code** — Open issues, suggest features, or submit pull requests. All contributions are welcome!
+- **Buy on itch.io** — A polished release will be available on [itch.io](https://itch.io) once ready. Stay tuned.
 
 ---
 
