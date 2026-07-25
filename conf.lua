@@ -12,4 +12,16 @@ function love.conf(t)
   t.modules.physics = false
   t.modules.thread = true
   t.externalstorage = true
+  
+  -- Android configuration
+  if love.system.getOS() == "Android" then
+    t.window.width = 1920
+    t.window.height = 1080
+    t.window.resizable = false
+    t.android = {
+      orientation = "landscape",
+      useLowMemory = true,
+      immersive = false
+    }
+  end
 end

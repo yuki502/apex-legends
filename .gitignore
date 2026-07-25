@@ -1,23 +1,32 @@
-# Live Server / Development
-.live-server/
-live-server/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Lua/LÖVE
+logs/
+*.love
 
-# OS files
-.DS_Store
-Thumbs.db
+# Android build
+android/love-android-sdl2/
+*.apk
+*.aab
+build/
+.gradle/
+.idea/
+*.iml
+*.log
 
 # IDE
 .vscode/
-.idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
-# Built game file (optional - uncomment to ignore)
-# *.love
+# Save files
+*.dat
+saves/
 
-# Node modules (if any)
-node_modules/
+# Temp files
+*.tmp
+.temp/
+
+# OS
+Thumbs.db
+.DS_Store
