@@ -1,0 +1,73 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v2
+      with:
+        api-levels: 31
+        ndk-version: 25.0.8775105
+        build-tools-version: 31.0.0
+    
+    - name: Clone LÖVE Android
+      run: |
+        git clone https://github.com/love2d/love-android.git
+        cd love-android
+        git submodule update --init --recursive
+    
+    - name: Copy game files
+      run: |
+        mkdir -p love-android/app/src/main/assets/game
+        cp -r conf.lua main.lua lib src assets love-android/app/src/main/assets/game/
+    
+    - name: Build APK with Gradle
+      run: |
+        cd love-android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: apex-legends-debug
+        path: love-android/app/build/outputs/apk/debug/app-debug.apk
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: love-android/app/build/outputs/apk/debug/app-debug.apk
+        asset_name: apex-legends-${{ github.ref_name }}.apk
+        asset_content_type: application/vnd.android.package-archive
