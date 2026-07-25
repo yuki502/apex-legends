@@ -3,7 +3,6 @@
 [![LÖVE](https://img.shields.io/badge/LÖVE-11.x-EA316E?logo=lua)](https://love2d.org/)
 [![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)](https://www.lua.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Game](https://img.shields.io/badge/download-.love-blue)](apex-legends.love)
 
 > **BETA** — This game is in active development. Features may change, and feedback is welcome!
 
@@ -18,7 +17,6 @@ A 2D space shooter built with [LÖVE](https://love2d.org/) (Lua 5.1). Fight wave
 cd apex-legends && love .
 
 # Or run from the .love archive
-love apex-legends.love
 ```
 
 **Prerequisites:** [LÖVE 11.x](https://love2d.org/) installed on your system.
@@ -63,26 +61,11 @@ love apex-legends.love
 
 - [LÖVE 11.x](https://love2d.org/) installed on your system
 
-### Option A: Run directly from source
+### Run directly from source
 
 ```bash
 cd apex-legends
 love .
-```
-
-### Option B: Run from .love archive
-
-```bash
-# The .love file is included in this repository
-love apex-legends.love
-```
-
-### Option C: Build .love archive yourself
-
-```bash
-# Requires Node.js (only for zip packaging)
-node rebuild-love.js
-# Output: apex-legends.love
 ```
 
 ---
@@ -117,7 +100,6 @@ node rebuild-love.js
 apex-legends/
 ├── main.lua                  # Entry point — LOVE callbacks, lifecycle, logging
 ├── conf.lua                  # Window configuration (1400×800, resizable, landscape)
-├── apex-legends.love         # Pre-built game archive
 ├── LICENSE
 ├── README.md
 ├── .gitignore
