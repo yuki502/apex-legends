@@ -1,11 +1,12 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 local flux = require("lib.flux")
-local ComponentDefs = require("src.component_defs")
+local ComponentDefs = require("src.data.component_defs")
 
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Hangar = Object:extend()
 
@@ -162,9 +163,9 @@ function Hangar:mousepressed(x, y, button)
       local ok, oldId = self.inventory:install(slotKey, self.selectedComponent)
       if ok then
         self.statsDirty = true
-        self.selectedComponent = nil
         local pos = self.slotPositions[slotKey]
         local def = ComponentDefs.ALL[self.selectedComponent]
+        self.selectedComponent = nil
         if self.effects then
           self.effects:installComponent(pos.x, pos.y, def and def.color or {1,1,1})
         end

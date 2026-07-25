@@ -1,9 +1,10 @@
 -- Loading screen system
 -- Shows progress while assets load, then transitions to main menu
 
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Loading = {}
 Loading.__index = Loading
@@ -16,9 +17,9 @@ function Loading:new()
   self.isComplete = false
   self.loadTasks = {}
   self.currentTask = 1
-  self.font = lg.newFont(18)
-  self.bigFont = lg.newFont(36)
-  self.tipFont = lg.newFont(14)
+  self.font = lg.newFont(Screen.fontSize(18))
+  self.bigFont = lg.newFont(Screen.fontSize(36))
+  self.tipFont = lg.newFont(Screen.fontSize(14))
   self.tips = {
     "Tip: Press SHIFT to dodge enemy fire",
     "Tip: Collect coins to buy upgrades in the shop",

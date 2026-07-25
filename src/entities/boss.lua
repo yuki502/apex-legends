@@ -1,5 +1,6 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
+local Screen = require("src.graphics.screen")
 
 local sin = math.sin
 local cos = math.cos
@@ -7,7 +8,7 @@ local pi = math.pi
 local min = math.min
 local max = math.max
 local lg = love.graphics
-local lw = lg.getWidth
+local lw = Screen.getWidth
 
 local Boss = Object:extend()
 

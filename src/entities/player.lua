@@ -1,14 +1,16 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
+local ComponentDefs = require("src.data.component_defs")
 
 local floor = math.floor
 local cos = math.cos
 local sin = math.sin
 local min = math.min
 local max = math.max
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local lgTime = love.timer.getTime
 
 local Player = Object:extend()
@@ -18,6 +20,18 @@ local _shootPos = { x = 0, y = 0 }
 local _shootPosL = { x = 0, y = 0 }
 local _shootPosR = { x = 0, y = 0 }
 local _shootPositions = { _shootPos }
+
+local BASE_MOVE_SPEED = 250
+local DODGE_DURATION = 0.15
+local DODGE_INVINCIBLE = 0.2
+local DODGE_SPEED = 800
+local PHASE_DODGE_DURATION = 0.25
+local PHASE_DODGE_INVINCIBLE = 0.3
+local HIT_INVINCIBLE = 2
+local SHIELD_HIT_INVINCIBLE = 0.5
+local SHOOT_COOLDOWN = 0.15
+local SPEED_BOOST_MULT = 1.5
+local SPEED_ITEM_MULT = 1.8
 
 function Player:new(design, inventory)
   self.x = lw() / 2
@@ -66,9 +80,9 @@ function Player:update(dt, dx, dy)
   self.engineT = self.engineT + dt * 6
   self.tilt = self.tilt + (dx * 0.3 - self.tilt) * dt * 8
 
-  local moveSpeed = 250 * (stats.speed or 1)
-  if self.hasSpeedBoost then moveSpeed = moveSpeed * 1.5 end
-  if self.hasSpeedItem then moveSpeed = moveSpeed * 1.8 end
+  local moveSpeed = BASE_MOVE_SPEED * (stats.speed or 1)
+  if self.hasSpeedBoost then moveSpeed = moveSpeed * SPEED_BOOST_MULT end
+  if self.hasSpeedItem then moveSpeed = moveSpeed * SPEED_ITEM_MULT end
   self.x = self.x + dx * moveSpeed * dt
   self.y = self.y + dy * moveSpeed * dt
   local w = lw()
@@ -124,7 +138,7 @@ end
 
 function Player:canShoot()
   local stats = self:getStats()
-  local cooldown = 0.15 / max(0.05, stats.fireRate or 1)
+  local cooldown = SHOOT_COOLDOWN / max(0.05, stats.fireRate or 1)
   if self.shootTimer <= 0 then
     self.shootTimer = cooldown
     return true
@@ -137,16 +151,16 @@ function Player:tryDodge(ddx, ddy)
   if self.dodgeCooldownTimer > 0 then return false end
   if self.isDodging then return false end
   self.isDodging = true
-  self.dodgeTimer = 0.15
-  self.invincible = 0.2
+  self.dodgeTimer = DODGE_DURATION
+  self.invincible = DODGE_INVINCIBLE
   self.dodgeCooldownTimer = (stats.dodgeCooldown or 1)
 
   if stats.phaseDodge then
-    self.invincible = 0.3
-    self.dodgeTimer = 0.25
+    self.invincible = PHASE_DODGE_INVINCIBLE
+    self.dodgeTimer = PHASE_DODGE_DURATION
   end
 
-  local spd = 800
+  local spd = DODGE_SPEED
   if ddx == 0 and ddy == 0 then ddy = -1 end
   local len = math.sqrt(ddx * ddx + ddy * ddy)
   self.dodgeX = (ddx / len) * spd
@@ -160,11 +174,11 @@ function Player:hit()
   if self.isDodging then return false end
   if self.shieldVal > 0 then
     self.shieldVal = self.shieldVal - 1
-    self.invincible = 0.5
+    self.invincible = SHIELD_HIT_INVINCIBLE
     return false
   end
   self.lives = self.lives - 1
-  self.invincible = 2
+  self.invincible = HIT_INVINCIBLE
   return true
 end
 
@@ -359,7 +373,6 @@ function Player:draw()
 
   -- Draw installed components on ship
   if self.inventory then
-    local ComponentDefs = require("src.component_defs")
     for slotKey, pos in pairs(ComponentDefs.SLOT_LAYOUT) do
       local compId = self.inventory:getInstalled(slotKey)
       if compId then

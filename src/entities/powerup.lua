@@ -1,9 +1,10 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 
+local Screen = require("src.graphics.screen")
 local sin = math.sin
 local lg = love.graphics
-local lh = lg.getHeight
+local lh = Screen.getHeight
 local lgGetFont = lg.getFont
 
 local Powerup = Object:extend()

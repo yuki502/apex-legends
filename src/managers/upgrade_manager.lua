@@ -51,6 +51,7 @@ local DEF = {
     maxLevel = 999,
     consumable = true,
     effect = function(level) return 1 end,
+    onPurchase = function(g) g.player.lives = math.min(g.player.lives + 1, g.player.maxLives) end,
   },
   critChance = {
     name = "Crit",
@@ -81,6 +82,7 @@ local DEF = {
     costScale = 1.6,
     maxLevel = 5,
     effect = function(level) return level end,
+    onPurchase = function(g) g.player.maxShield = g.player.maxShield + 1; g.player.shield = g.player.shield + 1 end,
   },
 }
 
@@ -141,12 +143,19 @@ function UpgradeManager.canBuy(key)
   return true
 end
 
+function UpgradeManager.applyPurchaseEffect(key, g)
+  local def = DEF[key]
+  if def and def.onPurchase then
+    def.onPurchase(g)
+  end
+end
+
 function UpgradeManager.purchase(key)
   local def = DEF[key]
   if not def then return false end
   if not UpgradeManager.canBuy(key) then return false end
   local cost = UpgradeManager.getCost(key)
-  local CurrencyManager = require("src.currency_manager")
+  local CurrencyManager = require("src.managers.currency_manager")
   if not CurrencyManager.spend(cost) then return false end
   if not def.consumable then
     _levels[key] = (_levels[key] or 0) + 1

@@ -1,4 +1,5 @@
 local Object = require("lib.classic")
+local Screen = require("src.graphics.screen")
 
 local lg = love.graphics
 local lgNewShader = lg.newShader
@@ -187,8 +188,8 @@ end
 function Shader:_sendStaticUniforms()
   if not self._supported then return end
   local s = self._shader
-  self._camBuf[1] = love.graphics.getWidth()
-  self._camBuf[2] = love.graphics.getHeight()
+  self._camBuf[1] = Screen.getWidth()
+  self._camBuf[2] = Screen.getHeight()
   s:send("ScreenSize", self._camBuf)
   s:send("ParallaxSpeed", self.parallaxSpeed)
   s:send("VignetteStrength", self.vignetteStrength)
@@ -245,6 +246,14 @@ end
 
 function Shader:remove()
   lg.setShader(nil)
+end
+
+function Shader:resize()
+  if self._supported then
+    self._camBuf[1] = Screen.getWidth()
+    self._camBuf[2] = Screen.getHeight()
+    self._shader:send("ScreenSize", self._camBuf)
+  end
 end
 
 function Shader:isSupported()

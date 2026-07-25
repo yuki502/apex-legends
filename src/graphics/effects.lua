@@ -2,11 +2,12 @@ local Object = require("lib.classic")
 local lume = require("lib.lume")
 local flux = require("lib.flux")
 
+local Screen = require("src.graphics.screen")
 local sin = math.sin
 local cos = math.cos
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Effects = Object:extend()
 

@@ -50,19 +50,19 @@ function WaveManager.startWave(g)
   g.spawnTimer = 0
 
   if isSuperBoss then
-    local SuperBossManager = require("src.super_boss_manager")
+    local SuperBossManager = require("src.managers.super_boss_manager")
     SuperBossManager.spawn(g, g.wave)
     g.enemiesInWave = 1
     g.bossWave = true
     g.spawnRate = 999
   elseif isBoss then
-    local BossManager = require("src.boss_manager")
+    local BossManager = require("src.managers.boss_manager")
     BossManager.spawn(g, g.wave)
     g.enemiesInWave = 1
     g.bossWave = true
     g.spawnRate = 999
   else
-    local hpMul, dmgMul, spdMul, countAdd = (require("src.enemy_types")).getScaling(g.wave)
+    local hpMul, dmgMul, spdMul, countAdd = (require("src.data.enemy_types")).getScaling(g.wave)
     g.enemiesInWave = floor(BASE_ENEMIES + g.wave * ENEMIES_PER_WAVE + countAdd)
     g.spawnRate = math.max(0.3, 1.1 - g.wave * 0.03)
   end
@@ -94,7 +94,7 @@ function WaveManager.onBossDefeated(g)
   if g.inventory then
     local slots = {"weapon", "thruster", "core", "engine", "wing", "shield", "armor", "multiplier"}
     local slot = slots[love.math.random(1, #slots)]
-    local comp = require("src.component_defs").getRandomBySlot(slot, g.wave + 5)
+    local comp = require("src.data.component_defs").getRandomBySlot(slot, g.wave + 5)
     if comp then
       g.inventory:add(comp.id)
       if g.effects then

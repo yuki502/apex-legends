@@ -1,7 +1,8 @@
 local floor = math.floor
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Customize = {}
 
@@ -32,7 +33,7 @@ end
 
 function Customize.draw(g)
   local w, h = lw(), lh()
-  local ShipDesigns = require("src.ship_designs")
+  local ShipDesigns = require("src.data.ship_designs")
 
   lg.setFont(g.bigFont)
   local title = "CHOOSE YOUR SHIP"
@@ -116,7 +117,7 @@ function Customize.handleInput(g)
   local tx, ty = love.mouse.getPosition()
   if not tx or tx == 0 then return end
 
-  local ShipDesigns = require("src.ship_designs")
+  local ShipDesigns = require("src.data.ship_designs")
   local cols, cardW, cardH, spacingX, spacingY, startX, startY = getLayout()
   local designCount = ShipDesigns.count()
 
@@ -134,7 +135,7 @@ function Customize.handleInput(g)
   local btnY = h - 60
   if ty >= btnY and ty <= btnY + 40 and tx >= w / 2 - 80 and tx <= w / 2 + 80 then
     g:initRun()
-    local State = require("src.state")
+    local State = require("src.systems.state")
     State.reset(g)
   end
 end

@@ -1,8 +1,9 @@
 local sin = math.sin
 local cos = math.cos
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Menus = {}
 
@@ -21,8 +22,8 @@ local function initStars()
     for i = 1, _starsPerLayer do
       local idx = #_stars + 1
       _stars[idx] = {
-        x = math.random() * 700,
-        y = math.random() * 400,
+        x = math.random() * lw(),
+        y = math.random() * lh(),
         layer = layer,
       }
     end
@@ -34,9 +35,9 @@ function Menus.updateStars(dt)
   for i = 1, #_stars do
     local s = _stars[i]
     s.y = s.y + _starSpeeds[s.layer] * dt
-    if s.y > 410 then
+    if s.y > lh() + 10 then
       s.y = -5
-      s.x = math.random() * 700
+      s.x = math.random() * lw()
     end
   end
 end

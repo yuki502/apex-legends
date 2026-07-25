@@ -24,7 +24,7 @@ local SUPER_BOSS_DEFS = {
 }
 
 function SuperBossManager.spawn(g, wave)
-  local Boss = require("src.boss")
+  local Boss = require("src.entities.boss")
   local cycle = math.floor((wave - 1) / 1000) % #SUPER_BOSS_DEFS
   local def = SUPER_BOSS_DEFS[cycle + 1]
   local phaseIdx = math.floor(((wave - 1) % 1000) / 100) + 1
@@ -48,7 +48,7 @@ function SuperBossManager.onPhaseDefeated(g)
     return false
   end
 
-  local Boss = require("src.boss")
+  local Boss = require("src.entities.boss")
   local phase = boss.superDef.phases[nextPhase]
   local newBoss = Boss(boss.wave, phase)
   newBoss.name = boss.superDef.name .. " P" .. nextPhase

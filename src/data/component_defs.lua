@@ -418,6 +418,9 @@ return {
     return result
   end,
   getRandomBySlot = function(slot, wave)
+    -- Picks a random component for the given slot, weighted by wave:
+    -- higher waves unlock higher rarities (1 per 10 waves, up to 4).
+    -- Rarity weight is 1 + rarity * 0.3 so rarer items appear more at higher waves.
     local candidates = {}
     for id, c in pairs(COMPONENT_DEFS) do
       if c.slot == slot then

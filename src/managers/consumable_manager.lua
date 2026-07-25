@@ -156,7 +156,7 @@ function ConsumableManager.buy(key)
   if not def then return false end
   local stock = _stock[key] or 0
   if stock >= def.maxStock then return false end
-  local CurrencyManager = require("src.currency_manager")
+  local CurrencyManager = require("src.managers.currency_manager")
   if not CurrencyManager.spend(def.cost) then return false end
   _stock[key] = stock + 1
   ConsumableManager.save()
@@ -178,7 +178,7 @@ function ConsumableManager.canBuy(key)
   if not def then return false end
   local stock = _stock[key] or 0
   if stock >= def.maxStock then return false end
-  local CurrencyManager = require("src.currency_manager")
+  local CurrencyManager = require("src.managers.currency_manager")
   return CurrencyManager.canAfford(def.cost)
 end
 

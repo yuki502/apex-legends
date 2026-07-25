@@ -48,7 +48,7 @@ local BOSS_TYPES = {
 }
 
 function BossManager.spawn(g, wave)
-  local Boss = require("src.boss")
+  local Boss = require("src.entities.boss")
   local idx = math.min(math.floor(wave / 10), #BOSS_TYPES)
   idx = math.max(1, idx)
   local template = BOSS_TYPES[idx]

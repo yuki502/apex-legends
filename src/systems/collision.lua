@@ -1,11 +1,11 @@
 local sqrt = math.sqrt
 local min = math.min
 local lume = require("lib.lume")
-local Audio = require("src.audio")
-local SpawnManager = require("src.spawn_manager")
-local State = require("src.state")
-local CurrencyManager = require("src.currency_manager")
-local UpgradeManager = require("src.upgrade_manager")
+local Audio = require("src.utils.audio")
+local SpawnManager = require("src.managers.spawn_manager")
+local State = require("src.systems.state")
+local CurrencyManager = require("src.managers.currency_manager")
+local UpgradeManager = require("src.managers.upgrade_manager")
 
 local Collision = {}
 
@@ -183,7 +183,9 @@ function Collision.bulletsVsEnemies(g)
       end
     end
 
-    ei = ei - 1
+    if not hit then
+      ei = ei - 1
+    end
   end
 
   g.combo = combo
@@ -193,6 +195,10 @@ function Collision.bulletsVsEnemies(g)
 end
 
 function Collision.bulletsVsBoss(g)
+  -- Checks player bullets against the boss (single active boss).
+  -- On hit: applies damage, onHitRegen, lifesteal, coin rewards,
+  -- powerup drops, and delegates to WaveManager on defeat.
+  -- Handles multi-phase super boss via SuperBossManager.
   if not g.boss or not g.boss.alive then return end
   local boss = g.boss
   local player = g.player
@@ -241,7 +247,7 @@ function Collision.bulletsVsBoss(g)
         g.shake:trigger(8, 0.3)
 
         if boss.isSuperBoss then
-          local SuperBossManager = require("src.super_boss_manager")
+          local SuperBossManager = require("src.managers.super_boss_manager")
           local phaseContinued = SuperBossManager.onPhaseDefeated(g)
           if phaseContinued then
             local coinReward = boss.superCoins or CurrencyManager.getSuperBossReward(g.wave)
@@ -263,7 +269,7 @@ function Collision.bulletsVsBoss(g)
           end
         end
 
-        local WaveManager = require("src.wave_manager")
+        local WaveManager = require("src.managers.wave_manager")
         WaveManager.onBossDefeated(g)
       end
       break
@@ -295,6 +301,7 @@ function Collision.enemiesVsPlayer(g)
         CurrencyManager.save()
         State.gameOver(g)
       end
+      -- do NOT increment i: g:removeEnemy(i) swapped the last enemy into position i
     else
       i = i + 1
     end

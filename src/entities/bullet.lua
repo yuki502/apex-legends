@@ -1,11 +1,12 @@
 local Object = require("lib.classic")
 
+local Screen = require("src.graphics.screen")
 local sqrt = math.sqrt
 local cos = math.cos
 local sin = math.sin
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Bullet = Object:extend()
 

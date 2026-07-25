@@ -1,13 +1,14 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
+local Screen = require("src.graphics.screen")
 
 local sin = math.sin
 local cos = math.cos
 local min = math.min
 local floor = math.floor
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local Enemy = Object:extend()
 
@@ -16,14 +17,14 @@ local _drawPts = {}
 function Enemy:new(wave, typeDef)
   local t = typeDef
   if not t then
-    local EnemyTypes = require("src.enemy_types")
+    local EnemyTypes = require("src.data.enemy_types")
     local available, totalWeight = EnemyTypes.getForWave(wave or 1)
     t = EnemyTypes.pick(available, totalWeight)
   end
 
   local hpMul, dmgMul, spdMul = 1, 1, 1
   if wave then
-    hpMul, dmgMul, spdMul = (require("src.enemy_types")).getScaling(wave)
+    hpMul, dmgMul, spdMul = (require("src.data.enemy_types")).getScaling(wave)
   end
 
   self.x = love.math.random(30, lw() - 30)

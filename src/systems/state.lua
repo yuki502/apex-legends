@@ -1,13 +1,13 @@
 local State = {}
 
 function State.startWave(g)
-  local WaveManager = require("src.wave_manager")
+  local WaveManager = require("src.managers.wave_manager")
   WaveManager.startWave(g)
 end
 
 function State.gameOver(g)
-  local Audio = require("src.audio")
-  local CurrencyManager = require("src.currency_manager")
+  local Audio = require("src.utils.audio")
+  local CurrencyManager = require("src.managers.currency_manager")
   g.effects:explode(g.player.x, g.player.y, {0.3, 0.8, 1}, 40, 300)
   Audio.play("explosion")
   Audio.stopMusic()
@@ -22,20 +22,20 @@ function State.gameOver(g)
 end
 
 function State.reset(g)
-  local Effects = require("src.effects")
-  local Shake = require("src.shake")
-  local Audio = require("src.audio")
-  local ShipDesigns = require("src.ship_designs")
-  local UpgradeManager = require("src.upgrade_manager")
-  local ConsumableManager = require("src.consumable_manager")
-  local SettingsManager = require("src.settings_manager")
-  local Inventory = require("src.inventory")
+  local Effects = require("src.graphics.effects")
+  local Shake = require("src.systems.shake")
+  local Audio = require("src.utils.audio")
+  local ShipDesigns = require("src.data.ship_designs")
+  local UpgradeManager = require("src.managers.upgrade_manager")
+  local ConsumableManager = require("src.managers.consumable_manager")
+  local SettingsManager = require("src.managers.settings_manager")
+  local Inventory = require("src.utils.inventory")
 
   g.inventory = Inventory()
   g.hangar = nil
 
   local design = ShipDesigns.get(g.selectedDesign)
-  g.player = require("src.player")(design, g.inventory)
+  g.player = require("src.entities.player")(design, g.inventory)
 
   g.player.maxLives = 3 + UpgradeManager.getLevel("maxHp")
   g.player.lives = g.player.maxLives
@@ -70,7 +70,7 @@ end
 
 function State.enterShop(g)
   g.state = "shop"
-  local ShopManager = require("src.shop_manager")
+  local ShopManager = require("src.managers.shop_manager")
   ShopManager.open()
 end
 

@@ -1,6 +1,6 @@
 local Object = require("lib.classic")
 local lume = require("lib.lume")
-local ComponentDefs = require("src.component_defs")
+local ComponentDefs = require("src.data.component_defs")
 
 local Inventory = Object:extend()
 
@@ -168,7 +168,7 @@ function Inventory:getActiveSynergies()
       installed[#installed + 1] = ComponentDefs.ALL[compId]
     end
   end
-  local SynergySystem = require("src.synergy_system")
+  local SynergySystem = require("src.systems.synergy_system")
   return SynergySystem.check(installed)
 end
 

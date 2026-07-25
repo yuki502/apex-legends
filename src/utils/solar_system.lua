@@ -1,12 +1,13 @@
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local cos = math.cos
 local sin = math.sin
 local floor = math.floor
 local random = math.random
 
-local Shaders = require("src.shaders")
+local Shaders = require("src.graphics.shaders")
 
 local SolarSystem = {}
 

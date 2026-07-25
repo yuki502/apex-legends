@@ -1,11 +1,12 @@
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local floor = math.floor
 local random = math.random
 
-local Shaders = require("src.shaders")
-local SolarSystem = require("src.solar_system")
+local Shaders = require("src.graphics.shaders")
+local SolarSystem = require("src.utils.solar_system")
 
 local Background = {}
 
@@ -70,7 +71,7 @@ function Background.init(seed)
     }
 
     local rng = createRNG(_seed + layerIdx * 1000)
-    local w, h = 800, 500
+    local w, h = lw(), lh()
 
     for i = 1, cfg.starCount do
       layer.stars[i] = {
@@ -84,7 +85,7 @@ function Background.init(seed)
     end
 
     if cfg.hasSystems then
-      local sysCount = floor(cfg.systemChance * w * 0.5) + 1
+      local sysCount = floor(cfg.systemChance * math.max(w, 800) * 0.5) + 1
       for i = 1, sysCount do
         local sysSeed = floor(rng() * 999999) + 1
         local sys = SolarSystem.acquire(sysSeed, layerIdx)

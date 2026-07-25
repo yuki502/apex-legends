@@ -1,5 +1,5 @@
 local lume = require("lib.lume")
-local Bullet = require("src.bullet")
+local Bullet = require("src.entities.bullet")
 
 local SpawnManager = {}
 

@@ -1,13 +1,14 @@
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local floor = math.floor
 local sin = math.sin
 
-local CurrencyManager = require("src.currency_manager")
-local UpgradeManager = require("src.upgrade_manager")
-local ConsumableManager = require("src.consumable_manager")
-local ComponentDefs = require("src.component_defs")
+local CurrencyManager = require("src.managers.currency_manager")
+local UpgradeManager = require("src.managers.upgrade_manager")
+local ConsumableManager = require("src.managers.consumable_manager")
+local ComponentDefs = require("src.data.component_defs")
 
 local ShopManager = {}
 
@@ -287,15 +288,10 @@ function ShopManager.handleInput(g, tx, ty)
         g:continueFromShop()
         return true
       elseif btn.action == "upgrade" then
-        local ok, cost = UpgradeManager.purchase(btn.key)
+        local ok = UpgradeManager.purchase(btn.key)
         if ok then
           ShopManager.showToast("Purchased!", {0.3, 1, 0.5})
-          if btn.key == "heal" then
-            g.player.lives = math.min(g.player.lives + 1, g.player.maxLives)
-          elseif btn.key == "shield" then
-            g.player.maxShield = g.player.maxShield + 1
-            g.player.shield = g.player.shield + 1
-          end
+          UpgradeManager.applyPurchaseEffect(btn.key, g)
         end
         return false
       elseif btn.action == "item" then

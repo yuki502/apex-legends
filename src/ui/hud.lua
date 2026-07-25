@@ -1,10 +1,11 @@
 local ceil = math.ceil
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local sin = math.sin
 
-local CurrencyManager = require("src.currency_manager")
+local CurrencyManager = require("src.managers.currency_manager")
 
 local POWERUP_COLORS = {
   double_shot = {1, 0.8, 0.2},

@@ -1,33 +1,34 @@
 local Object = require("lib.classic")
-local Input = require("src.input")
-local Audio = require("src.audio")
-local ShipDesigns = require("src.ship_designs")
-local PostShader = require("src.post_shader")
-local State = require("src.state")
-local WaveManager = require("src.wave_manager")
-local SpawnManager = require("src.spawn_manager")
-local Collision = require("src.collision")
-local HUD = require("src.hud")
-local Menus = require("src.menus")
-local Customize = require("src.customize")
-local TouchControls = require("src.touch_controls")
-local Bullet = require("src.bullet")
-local Enemy = require("src.enemy")
-local Powerup = require("src.powerup")
-local Background = require("src.background")
-local SettingsManager = require("src.settings_manager")
-local CurrencyManager = require("src.currency_manager")
-local UpgradeManager = require("src.upgrade_manager")
-local ConsumableManager = require("src.consumable_manager")
-local ShopManager = require("src.shop_manager")
-local Inventory = require("src.inventory")
-local Hangar = require("src.hangar")
-local ComponentDefs = require("src.component_defs")
-local Loading = require("src.loading")
+local Input = require("src.systems.input")
+local Audio = require("src.utils.audio")
+local ShipDesigns = require("src.data.ship_designs")
+local PostShader = require("src.graphics.post_shader")
+local State = require("src.systems.state")
+local WaveManager = require("src.managers.wave_manager")
+local SpawnManager = require("src.managers.spawn_manager")
+local Collision = require("src.systems.collision")
+local HUD = require("src.ui.hud")
+local Menus = require("src.ui.menus")
+local Customize = require("src.ui.customize")
+local TouchControls = require("src.ui.touch_controls")
+local Bullet = require("src.entities.bullet")
+local Enemy = require("src.entities.enemy")
+local Powerup = require("src.entities.powerup")
+local Background = require("src.graphics.background")
+local SettingsManager = require("src.managers.settings_manager")
+local CurrencyManager = require("src.managers.currency_manager")
+local UpgradeManager = require("src.managers.upgrade_manager")
+local ConsumableManager = require("src.managers.consumable_manager")
+local ShopManager = require("src.managers.shop_manager")
+local Inventory = require("src.utils.inventory")
+local Hangar = require("src.ui.hangar")
+local ComponentDefs = require("src.data.component_defs")
+local Loading = require("src.ui.loading")
 
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 
 local COMBO_COLOR_HIGH = {1.0, 0.2, 0.8}
 local COMBO_COLOR_MED = {1.0, 0.8, 0.2}
@@ -66,17 +67,16 @@ function Game:new()
   self.state = "loading"
   self.combo = 0
   self.maxCombo = 0
-  self.menuTimer = 0
   self.menuFadeOut = 0
   self.selectedDesign = 1
   self.paused = false
   self.totalKills = 0
 
-  self.font = lg.newFont(18)
-  self.bigFont = lg.newFont(40)
-  self.titleFont = lg.newFont(22)
-  self.smallFont = lg.newFont(14)
-  self.tinyFont = lg.newFont(11)
+  self.font = lg.newFont(Screen.fontSize(18))
+  self.bigFont = lg.newFont(Screen.fontSize(40))
+  self.titleFont = lg.newFont(Screen.fontSize(22))
+  self.smallFont = lg.newFont(Screen.fontSize(14))
+  self.tinyFont = lg.newFont(Screen.fontSize(11))
 
   self.shader = PostShader()
   self.bgScrollY = 0
@@ -159,9 +159,9 @@ function Game:startPlaying()
   self.componentDropPool = {}
 
   local design = ShipDesigns[self.selectedDesign] or ShipDesigns[1]
-  self.player = require("src.player")(design, self.inventory)
-  self.effects = require("src.effects")()
-  self.shake = require("src.shake")()
+  self.player = require("src.entities.player")(design, self.inventory)
+  self.effects = require("src.graphics.effects")()
+  self.shake = require("src.systems.shake")()
 
   self.bullets = {}
   self.bulletCount = 0
@@ -314,11 +314,7 @@ function Game:update(dt)
       self:addBullet(pos.x, pos.y, stats)
       self.effects:muzzleFlash(pos.x, pos.y - 6)
     end
-    if #positions > 1 then
-      Audio.play("shoot")
-    else
-      Audio.play("shoot")
-    end
+    Audio.play("shoot")
   end
 
   Collision.updateAll(self, dt)

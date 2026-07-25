@@ -1,9 +1,10 @@
+local Screen = require("src.graphics.screen")
 local lg = love.graphics
-local lw = lg.getWidth
-local lh = lg.getHeight
+local lw = Screen.getWidth
+local lh = Screen.getHeight
 local sin = math.sin
 
-local ConsumableManager = require("src.consumable_manager")
+local ConsumableManager = require("src.managers.consumable_manager")
 
 local TouchControls = {}
 
