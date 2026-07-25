@@ -1,3 +1,9 @@
+-- shop_manager.lua
+-- Interfaz de tienda: 3 tabs (upgrades, consumables, components).
+-- Muestra items disponibles, precios, y permite compra.
+-- Se accede después de cada jefe (wave 10, 20, 30...).
+-- Maneja: rendering de paneles, input de touch/mouse, lógica de compra.
+
 local Screen = require("src.graphics.screen")
 local lg = love.graphics
 local lw = Screen.getWidth

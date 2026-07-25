@@ -1,3 +1,9 @@
+-- menus.lua
+-- Menú principal y pantallas de estado (game over, pausa).
+-- Starfield pre-generado con 3 capas para animación de fondo.
+-- Renderiza: título, high score, botón de inicio, versión.
+-- Incluye animación de fade-out al iniciar partida.
+
 local sin = math.sin
 local cos = math.cos
 local Screen = require("src.graphics.screen")

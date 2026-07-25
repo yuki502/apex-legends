@@ -1,3 +1,9 @@
+-- touch_controls.lua
+-- Controles touch: joystick virtual, botón de disparo, items.
+-- Se muestra solo durante el juego (no en menús/hangar/shop).
+-- Soporta handedness (mano izquierda/derecha) desde settings.
+-- Escalado proporcional al tamaño de pantalla.
+
 local Screen = require("src.graphics.screen")
 local lg = love.graphics
 local lw = Screen.getWidth

@@ -1,3 +1,9 @@
+-- input.lua
+-- Sistema de entrada unificado: keyboard + touch + mouse.
+-- Convierte input crudo a movimiento normalizado (dx, dy).
+-- Soporta: WASD, flechas, joystick virtual, fire button.
+-- Detecta: fire just pressed, pause, dodge (shift/double-tap).
+
 local Object = require("lib.classic")
 local sqrt = math.sqrt
 

@@ -1,3 +1,10 @@
+-- collision.lua
+-- Sistema de detección de colisiones y respuesta.
+-- Maneja: balas del jugador vs enemigos, balas enemigas vs jugador,
+-- enemigos vs jugador, y recolección de powerups.
+-- Optimizado: colisión inline (sin llamada a función), caching de referencias.
+-- Cada función maneja su propia eliminación de entidades (swap-remove).
+
 local sqrt = math.sqrt
 local min = math.min
 local lume = require("lib.lume")
@@ -8,6 +15,44 @@ local CurrencyManager = require("src.managers.currency_manager")
 local UpgradeManager = require("src.managers.upgrade_manager")
 
 local Collision = {}
+
+-- ═══════════════════════════════════════════════════════
+-- UTILIDADES DE COLISIÓN
+-- ═══════════════════════════════════════════════════════
+
+--- Calcula la distancia al cuadrado entre dos puntos.
+-- Más rápido que dist() porque evita la raíz cuadrada.
+function Collision.distSq(x1, y1, x2, y2)
+  local dx = x1 - x2
+  local dy = y1 - y2
+  return dx * dx + dy * dy
+end
+
+--- Verifica colisión entre dos círculos.
+function Collision.circle(x1, y1, r1, x2, y2, r2)
+  local d = r1 + r2
+  return Collision.distSq(x1, y1, x2, y2) < d * d
+end
+
+-- ═══════════════════════════════════════════════════════
+-- ACTUALIZACIÓN PRINCIPAL
+-- ═══════════════════════════════════════════════════════
+
+--- Actualiza todos los sistemas de colisión.
+-- Solo se ejecuta en estado "playing" y si no está pausado.
+-- @param g Referencia al juego (Game)
+-- @param dt Delta time
+function Collision.updateAll(g, dt)
+  if g.state ~= "playing" or g.paused then return end
+
+  Collision.updateBullets(g, dt)
+  Collision.updateEnemyBullets(g, dt)
+  Collision.bulletsVsEnemies(g)
+  Collision.bulletsVsBoss(g)
+  Collision.enemiesVsPlayer(g)
+  Collision.updatePowerups(g, dt)
+  Collision.updateTimers(g, dt)
+end
 
 function Collision.distSq(x1, y1, x2, y2)
   local dx = x1 - x2
@@ -32,6 +77,8 @@ function Collision.updateAll(g, dt)
   Collision.updateTimers(g, dt)
 end
 
+--- Actualiza los timers de powerups del jugador (damage boost, speed, magnet).
+-- Decrementa timers y desactiva powerups cuando expiran.
 function Collision.updateTimers(g, dt)
   local player = g.player
   if not player then return end
@@ -55,6 +102,9 @@ function Collision.updateTimers(g, dt)
   end
 end
 
+--- Actualiza las balas del jugador.
+-- Mueve cada bala y la elimina si sale de pantalla o muere.
+-- Optimizado: usa while-loop con swap-remove para evitar re-indexación.
 function Collision.updateBullets(g, dt)
   local i = 1
   while i <= g.bulletCount do
@@ -72,6 +122,9 @@ function Collision.updateBullets(g, dt)
   end
 end
 
+--- Actualiza las balas enemigas y detecta colisión con el jugador.
+-- Optimizado: caching de px/py/pr al inicio, colisión inline.
+-- Si colisiona: elimina bala, aplica daño, verifica game over.
 function Collision.updateEnemyBullets(g, dt)
   local player = g.player
   local px, py, pr = player.x, player.y, player.radius
@@ -99,88 +152,93 @@ function Collision.updateEnemyBullets(g, dt)
   end
 end
 
+--- Detecta colisión entre balas del jugador y enemigos.
+-- Para cada enemigo (iterando hacia atrás), verifica contra cada bala.
+-- Al matar: combo++, score, coins, lifesteal, onKillBoost, powerups.
+-- Optimizado: caching de references (effects, shake, bullets, enemies).
 function Collision.bulletsVsEnemies(g)
   local combo = g.combo
   local score = g.score
   local totalKills = g.totalKills
   local maxCombo = g.maxCombo
   local player = g.player
-
-  local magnetRange = UpgradeManager.getEffect("magnetRange")
+  local effects = g.effects
+  local shake = g.shake
+  local bullets = g.bullets
+  local enemies = g.enemies
 
   local ei = g.enemyCount
   while ei >= 1 do
-    local enemy = g.enemies[ei]
+    local enemy = enemies[ei]
     if not enemy then break end
     local ex, ey, er = enemy.x, enemy.y, enemy.radius
     local hit = false
 
     local bi = g.bulletCount
     while bi >= 1 do
-      local bullet = g.bullets[bi]
-      if bullet and bullet.alive and Collision.circle(ex, ey, er, bullet.x, bullet.y, bullet.radius) then
-        local dmg = bullet:getDamage()
-        local isCrit = bullet:isCrit()
+      local bullet = bullets[bi]
+      if bullet and bullet.alive then
+        local dx = ex - bullet.x
+        local dy = ey - bullet.y
+        local minDist = er + bullet.radius
+        if dx * dx + dy * dy < minDist * minDist then
+          local dmg = bullet:getDamage()
+          local isCrit = bullet:isCrit()
 
-        bullet.alive = false
-        g:removeBullet(bi)
+          bullet.alive = false
+          g:removeBullet(bi)
 
-        local killed = enemy:hit(dmg)
-        g.effects:muzzleFlash(ex, ey)
-        Audio.play("hit")
-        g.shake:trigger(2, 0.08)
+          local killed = enemy:hit(dmg)
+          effects:muzzleFlash(ex, ey)
+          Audio.play("hit")
+          shake:trigger(2, 0.08)
 
-        if isCrit then
-          g.effects:comboText(ex, ey, "CRIT!")
-        end
-
-        if killed then
-          combo = combo + 1
-          if combo > maxCombo then maxCombo = combo end
-          local bonus = math.min(combo, 10)
-          score = score + enemy.points * bonus
-          totalKills = totalKills + 1
-          g.effects:explode(ex, ey, enemy.color, 16, 200)
-          if combo >= 3 then
-            g.effects:comboText(ex, ey, combo)
-          end
-          Audio.play("explosion")
-          g.shake:trigger(3, 0.12)
-
-          -- lifesteal
-          local lifesteal = player:getLifesteal()
-          if lifesteal > 0 then
-            player.lives = math.min(player.lives + 1, player.maxLives + 2)
+          if isCrit then
+            effects:comboText(ex, ey, "CRIT!")
           end
 
-          -- onKillBoost
-          local boost = player:getOnKillBoost()
-          if boost > 0 then
-            player.speedTimer = player.speedTimer + 2
-            player.hasSpeedItem = true
+          if killed then
+            combo = combo + 1
+            if combo > maxCombo then maxCombo = combo end
+            local bonus = math.min(combo, 10)
+            score = score + enemy.points * bonus
+            totalKills = totalKills + 1
+            effects:explode(ex, ey, enemy.color, 16, 200)
+            if combo >= 3 then
+              effects:comboText(ex, ey, combo)
+            end
+            Audio.play("explosion")
+            shake:trigger(3, 0.12)
+
+            local lifesteal = player:getLifesteal()
+            if lifesteal > 0 then
+              player.lives = math.min(player.lives + 1, player.maxLives + 2)
+            end
+
+            local boost = player:getOnKillBoost()
+            if boost > 0 then
+              player.speedTimer = player.speedTimer + 2
+              player.hasSpeedItem = true
+            end
+
+            local coinMult = player:getCoinMultiplier()
+            CurrencyManager.add(math.floor(CurrencyManager.getEnemyReward(g.wave) * coinMult))
+            effects:coinPickup(ex, ey)
+
+            SpawnManager.trySpawnPowerup(g, ex, ey)
+            g:removeEnemy(ei)
           end
 
-          local coinReward = CurrencyManager.getEnemyReward(g.wave)
-          local coinMult = player:getCoinMultiplier()
-          CurrencyManager.add(math.floor(coinReward * coinMult))
-          g.effects:coinPickup(ex, ey)
+          local onHitRegen = player:getOnHitRegen()
+          if onHitRegen > 0 then
+            player.shieldVal = math.min(player:getStats().shield or 50, player.shieldVal + onHitRegen)
+          end
 
-          SpawnManager.trySpawnPowerup(g, ex, ey)
-          g:removeEnemy(ei)
+          hit = true
+          break
         end
-
-        -- onHit regen for shield
-        local onHitRegen = player:getOnHitRegen()
-        if onHitRegen > 0 then
-          local stats = player:getStats()
-          player.shieldVal = math.min(stats.shield or 50, player.shieldVal + onHitRegen)
-        end
-
-        hit = true
-        break
-      else
-        bi = bi - 1
       end
+      bi = bi - 1
     end
 
     if not hit then
@@ -194,6 +252,9 @@ function Collision.bulletsVsEnemies(g)
   g.maxCombo = maxCombo
 end
 
+--- Detecta colisión entre balas del jugador y el jefe.
+-- Similar a bulletsVsEnemies pero contra el boss activo.
+-- Al matar: score, coins, lifesteal, explosiones, super boss handling.
 function Collision.bulletsVsBoss(g)
   -- Checks player bullets against the boss (single active boss).
   -- On hit: applies damage, onHitRegen, lifesteal, coin rewards,
@@ -279,6 +340,9 @@ function Collision.bulletsVsBoss(g)
   end
 end
 
+--- Detecta colisión entre enemigos y el jugador (contacto directo).
+-- Al colisionar: elimina enemigo, resetea combo, aplica daño.
+-- Importante: no incrementa i después de removeEnemy (swap-remove).
 function Collision.enemiesVsPlayer(g)
   local player = g.player
   local px, py, pr = player.x, player.y, player.radius
@@ -308,6 +372,9 @@ function Collision.enemiesVsPlayer(g)
   end
 end
 
+--- Actualiza powerups: movimiento, imán, y recolección.
+-- Si el jugador tiene imán, los powerups se mueven hacia él.
+-- Si están lo suficientemente cerca, se recolectan.
 function Collision.updatePowerups(g, dt)
   local player = g.player
   local px, py, pr = player.x, player.y, player.radius

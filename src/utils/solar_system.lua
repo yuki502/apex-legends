@@ -1,3 +1,9 @@
+-- solar_system.lua
+-- Generación procedural de sistemas solares para el fondo.
+-- Cada sistema tiene: estrella central, planetas en órbita, anillos.
+-- Renderizados como punto central + círculos concéntricos.
+-- Pool de instancias para reutilización eficiente.
+
 local Screen = require("src.graphics.screen")
 local lg = love.graphics
 local lw = Screen.getWidth

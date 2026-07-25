@@ -1,5 +1,10 @@
+-- inventory.lua
+-- Gestión de inventario de componentes del jugador.
+-- Maneja: componentes poseídos, instalados en slots, créditos.
+-- Persiste entre partidas via inventory.dat.
+-- Soporta: instalar/desinstalar componentes, agregar/quitar créditos.
+
 local Object = require("lib.classic")
-local lume = require("lib.lume")
 local ComponentDefs = require("src.data.component_defs")
 
 local Inventory = Object:extend()

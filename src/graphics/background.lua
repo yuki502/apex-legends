@@ -1,3 +1,9 @@
+-- background.lua
+-- Fondo parallax de 4 capas con estrellas pre-generadas.
+-- Cada capa tiene: estrellas (puntos), nebulosas (líneas), y sistemas solares.
+-- Scroll vertical automático con velocidades diferentes por capa.
+-- Seed configurable para generación procedural consistente.
+
 local Screen = require("src.graphics.screen")
 local lg = love.graphics
 local lw = Screen.getWidth

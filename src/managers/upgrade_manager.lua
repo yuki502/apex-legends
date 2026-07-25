@@ -1,5 +1,12 @@
+-- upgrade_manager.lua
+-- Gestión de mejoras permanentes: daño, escudo, vida, velocidad, etc.
+-- 8 tipos de mejoras con niveles y costos crecientes.
+-- Persiste entre partidas via upgrades.dat.
+-- Cada mejora otorga un bonus porcentual acumulativo.
+
 local UpgradeManager = {}
 
+-- Definición de mejoras disponibles
 local DEF = {
   damage = {
     name = "Damage",

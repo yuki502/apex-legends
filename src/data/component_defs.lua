@@ -1,7 +1,15 @@
+-- component_defs.lua
+-- Definición de 42 componentes en 8 categorías.
+-- Cada componente tiene: id, nombre, slot, rareza, stats, visual, tags.
+-- Las stats se aplican al jugador al instalar el componente.
+-- Los tags se usan para detección de sinergias.
+-- Organizado por categorías: weapon, thruster, core, engine, wing, shield, armor, multiplier.
+
 local lume = require("lib.lume")
 
 local COMPONENT_DEFS = {}
 
+-- Categorías de componentes con colores para rendering
 local CATEGORIES = {
   weapon = { label = "Weapon", color = {1, 0.4, 0.2} },
   thruster = { label = "Thruster", color = {0.2, 0.8, 1} },

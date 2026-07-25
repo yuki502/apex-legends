@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Game](https://img.shields.io/badge/download-.love-blue)](apex-legends.love)
 
-> **⚠️ BETA** — This game is in active development. Features may change, and feedback is welcome!
+> **BETA** — This game is in active development. Features may change, and feedback is welcome!
 
 A 2D space shooter built with [LÖVE](https://love2d.org/) (Lua 5.1). Fight waves of enemies, battle bosses, collect components, and build your ultimate ship in the hangar.
 
@@ -39,6 +39,8 @@ love apex-legends.love
 - **Touch controls** — Virtual joystick, fire button, and item buttons with left/right handed mode.
 - **Visual effects** — Procedural parallax starfield background, procedural solar systems, post-processing shader, particle explosions, screen shake.
 - **Screen adaptation** — Virtual viewport with uniform scaling + letterbox bars. Design resolution 700×400 scales to any window size. Input coordinates are automatically transformed.
+- **Logging** — Session-based logging with rotation, configurable levels (DEBUG/INFO/WARN/ERROR), automatic file storage in `logs/`.
+- **Developer mode** — Overlay with FPS, frame time, memory, entity count. Hitbox rendering, game speed control (F5/F6). Activated via F8 or settings.
 
 ---
 
@@ -87,6 +89,8 @@ node rebuild-love.js
 
 ## Controls
 
+### Game Controls
+
 | Action | Keyboard | Touch |
 |---|---|---|
 | Move | WASD / Arrow keys | Left joystick area |
@@ -95,13 +99,23 @@ node rebuild-love.js
 | Pause | Escape / P | — |
 | Consumable | 1-4 keys | Item buttons |
 
+### Developer Mode (F8 to toggle)
+
+| Action | Key | Description |
+|---|---|---|
+| Toggle overlay | F3 | Show/hide stats overlay |
+| Hitboxes | F4 | Toggle hitbox rendering |
+| Pause (dev) | F5 | Pause game (dev mode only) |
+| Game speed | F6 | Toggle 2× / 1× speed |
+| Toggle dev mode | F8 | Enable/disable developer mode |
+
 ---
 
 ## Project Structure
 
 ```
 apex-legends/
-├── main.lua                  # Entry point — LOVE callbacks
+├── main.lua                  # Entry point — LOVE callbacks, lifecycle, logging
 ├── conf.lua                  # Window configuration (1400×800, resizable, landscape)
 ├── apex-legends.love         # Pre-built game archive
 ├── LICENSE
@@ -113,7 +127,7 @@ apex-legends/
 │   └── lume.lua              # Utilities (rxi/lume)
 ├── assets/
 │   └── audio/                # Game audio files (.ogg, .mp3)
-├── src/                      # Source code (37 modules)
+├── src/                      # Source code (43 modules)
 │   ├── game.lua              # Main state machine and orchestrator
 │   ├── managers/             # Game management systems
 │   │   ├── boss_manager.lua      # Boss spawn templates
@@ -127,7 +141,10 @@ apex-legends/
 │   │   └── wave_manager.lua      # Wave progression logic
 │   ├── systems/              # Core game logic systems
 │   │   ├── collision.lua         # Hit detection, damage, powerup collection
+│   │   ├── entity_list.lua       # Generic list with swap-remove pattern
+│   │   ├── entity_pool.lua       # Object pool for entity reuse
 │   │   ├── input.lua             # Keyboard + touch input handling
+│   │   ├── lifecycle.lua         # App focus, visibility, quit handling
 │   │   ├── shake.lua             # Screen shake effect
 │   │   ├── state.lua             # Game state transitions
 │   │   └── synergy_system.lua    # 14+ component synergies
@@ -152,12 +169,24 @@ apex-legends/
 │   │   └── shaders.lua           # GLSL shader programs
 │   ├── data/                 # Data and configuration definitions
 │   │   ├── component_defs.lua    # 42 component definitions in 8 categories
+│   │   ├── constants.lua         # Centralized game constants (50+ values)
 │   │   ├── enemy_types.lua       # 10 enemy type definitions
 │   │   └── ship_designs.lua      # Ship visual designs
 │   └── utils/                # Utility modules
 │       ├── audio.lua             # Sound effects and music
+│       ├── dev_mode.lua          # Developer overlay and debugging tools
 │       ├── inventory.lua         # Component inventory + slot system
+│       ├── logger.lua            # Session logging with rotation
 │       └── solar_system.lua      # Procedural solar systems
+├── tests/                    # Test infrastructure
+│   ├── test_runner.lua           # Minimal test framework
+│   ├── unit/
+│   │   ├── test_constants.lua    # Constants module tests
+│   │   ├── test_synergies.lua    # Synergy system tests
+│   │   └── test_benchmarks.lua   # Performance benchmarks
+│   └── sandbox/
+│       ├── sandbox.lua           # Interactive testing environment
+│       └── test_components.lua   # Component system tests
 ```
 
 ---
@@ -168,9 +197,16 @@ apex-legends/
 
 ```
 love.load()
-  └─ Game:new() → initializes all managers, loads saves
+  ├─ Screen.init()              # Virtual viewport setup
+  ├─ SettingsManager.init()     # Load settings (idempotent)
+  ├─ DevMode.init()             # Developer tools
+  ├─ Logger.new()               # Logging system
+  └─ Game:new()                 # Initializes all managers, loads saves
 
 love.update(dt)
+  ├─ DevMode.update(dt)         # FPS, memory stats, key bindings
+  ├─ DevMode.pause check        # Skip game update if dev-paused
+  ├─ Game speed multiplier      # dt adjusted by DevMode.getGameSpeed()
   └─ Game:update(dt)
        ├─ State: menu → customize → playing → shop → hangar → playing
        ├─ WaveManager: progression, countdown, boss triggers
@@ -179,16 +215,22 @@ love.update(dt)
        └─ Collision: bullet-enemy, bullet-boss, enemy-player, powerups
 
 love.draw()
-  └─ Screen.drawLetterbox()   # Letterbox bars
-  └─ Screen.apply()           # Push + scale to virtual viewport
-  └─ Game:draw()
-       ├─ Background (4-layer parallax)
-       ├─ Shader (post-processing lights, uses virtual dims)
-       ├─ Entities (bullets, enemies, boss, player)
-       ├─ Shader removed
-       ├─ UI (HUD, controls, game over, pause)
-       └─ State-specific overlays (menu, shop, hangar)
-  └─ Screen.clear()           # Pop transform
+  ├─ Screen.drawLetterbox()     # Letterbox bars
+  ├─ Screen.apply()             # Push + scale to virtual viewport
+  ├─ Game:draw()
+  │    ├─ Background (4-layer parallax)
+  │    ├─ Shader (post-processing lights, uses virtual dims)
+  │    ├─ Entities (bullets, enemies, boss, player) + hitboxes if dev mode
+  │    ├─ Shader removed
+  │    ├─ UI (HUD, controls, game over, pause)
+  │    └─ State-specific overlays (menu, shop, hangar)
+  ├─ DevMode.draw()             # Stats overlay
+  └─ Screen.clear()             # Pop transform
+
+love.focus(f)     → Lifecycle.onFocus(f)    # Auto-pause on focus loss
+love.visible(v)   → Lifecycle.onVisible(v)  # Auto-pause on hidden
+love.quit()       → Lifecycle.quit()         # Save data on exit
+love.resize(w,h)  → Screen.update()          # Recalculate viewport
 ```
 
 ### State Flow
@@ -224,6 +266,67 @@ The game uses a **virtual viewport** system (`src/graphics/screen.lua`) to rende
 
 ---
 
+### Constants Module
+
+All magic numbers are centralized in `src/data/constants.lua` (50+ values):
+
+- Display: `DESIGN_W`, `DESIGN_H`
+- Player: `PLAYER_SPEED`, `PLAYER_MAX_HP`, `PLAYER_DODGE_DURATION`
+- Combat: `COMBO_THRESHOLD_MED`, `BOSS_WAVE_INTERVAL`, `ENEMY_HP_SCALE`
+- Economy: `COIN_KILL_BASE`, `UPGRADE_BASE_COST`, `SHOP_RARITY_PRICE_MULT`
+- Persistence: `SAVE_CURRENCY`, `SAVE_HIGHSCORE`, `SAVE_SETTINGS`
+
+---
+
+### Logging System
+
+`src/utils/logger.lua` provides session-based logging:
+
+- **4 levels**: DEBUG (1), INFO (2), WARN (3), ERROR (4)
+- **Buffered writes**: 4KB buffer, auto-flush to prevent I/O per-frame
+- **Log rotation**: Max 5 files, 256KB each, auto-deletes oldest
+- **Session tracking**: Each session gets a timestamped file in `logs/`
+- **API**: `Logger:info("message")`, `Logger:debug(...)`, `Logger:error(...)`
+- **Configuration**: `Logger.configure({minLevel=2, toFile=true})`
+
+---
+
+### App Lifecycle
+
+`src/systems/lifecycle.lua` handles focus and visibility events:
+
+- **Focus loss** → Auto-pauses game (preserves pause state)
+- **Focus restore** → Restores game state
+- **Visibility hidden** → Pauses if playing
+- **Quit** → Saves all data (currency, settings)
+- **Low memory** → Triggers garbage collection
+
+---
+
+### Developer Mode
+
+`src/utils/dev_mode.lua` provides debugging tools without affecting production performance:
+
+**Overlay (F3):**
+- FPS counter
+- Frame time (ms)
+- Memory usage (KB)
+- Entity/bullet/enemy/powerup counts
+
+**Tools:**
+- **Hitbox rendering (F4)** — Draw collision circles on all entities
+- **Pause (F5)** — Freeze game update, continue rendering
+- **Game speed (F6)** — Toggle 2× / 1× speed
+- **Frame step** — Advance one frame at a time when paused
+
+**Activation:**
+- Toggle via F8
+- Or enable in `settings.dat` with `devMode=true`
+
+When disabled, `DevMode.update()` returns immediately — zero overhead.
+
+---
+
 ## Key Systems
 
 ### Combat
@@ -244,9 +347,41 @@ The game uses a **virtual viewport** system (`src/graphics/screen.lua`) to rende
 |---|---|
 | `currency.dat` | Saved coins |
 | `highscore.dat` | High score |
-| `settings.dat` | Volume, handedness |
+| `settings.dat` | Volume, handedness, devMode, logToFile |
 | `upgrades.dat` | Permanent upgrade levels |
 | `inventory.dat` | (planned) Saved component inventory |
+
+---
+
+## Testing
+
+Tests are located in `tests/` with a minimal test runner:
+
+```bash
+# Run tests from command line (requires love in PATH)
+love . --test
+
+# Or load specific test file in sandbox mode
+love . --sandbox
+```
+
+### Test Structure
+
+| Directory | Purpose |
+|---|---|
+| `tests/unit/` | Unit tests for individual modules |
+| `tests/sandbox/` | Interactive testing without full game |
+| `tests/test_runner.lua` | Minimal `describe/it/assert` framework |
+
+### Test Files
+
+| File | Tests |
+|---|---|
+| `test_constants.lua` | Constants module values and types |
+| `test_synergies.lua` | Synergy detection (Arsenal, Fortress, Speed Demon) |
+| `test_benchmarks.lua` | Table creation vs reuse, string concat methods |
+| `test_components.lua` | Component slot queries, random selection |
+| `sandbox.lua` | Interactive UI for selecting and running sandbox tests |
 
 ---
 
@@ -266,6 +401,11 @@ Active development. All core features are implemented:
 | Visual effects and shaders | ✅ |
 | Persistent upgrades | ✅ |
 | Screen adaptation (resizable, uniform scaling) | ✅ |
+| Logging system with rotation | ✅ |
+| Developer mode (overlay, hitboxes, speed) | ✅ |
+| App lifecycle handling (focus, visibility, quit) | ✅ |
+| Centralized constants module | ✅ |
+| Test infrastructure | ✅ |
 
 ---
 

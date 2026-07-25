@@ -1,3 +1,9 @@
+-- spawn_manager.lua
+-- Gestión de spawning de enemigos y boss.
+-- Controla: spawn timing, enemy shooting, boss updates.
+-- Los enemigos se spawnan desde arriba con comportamientos aleatorios.
+-- El boss se spawnan en ola 10, 20, 30... con patrones especiales.
+
 local lume = require("lib.lume")
 local Bullet = require("src.entities.bullet")
 

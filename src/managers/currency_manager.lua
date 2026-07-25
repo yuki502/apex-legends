@@ -1,7 +1,13 @@
+-- currency_manager.lua
+-- Gestión de monedas con persistencia.
+-- Guarda/carga en currency.dat.
+-- Calcula recompensas por kills (normal, boss, super boss).
+-- Las monedas persisten entre partidas.
+
 local CurrencyManager = {}
 
-local _coins = 0
-local _totalEarned = 0
+local _coins = 0        -- Monedas actuales
+local _totalEarned = 0  -- Total ganado en la partida
 
 function CurrencyManager.init()
   _coins = 0

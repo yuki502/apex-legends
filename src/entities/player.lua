@@ -1,3 +1,9 @@
+-- player.lua
+-- Entidad del jugador: movimiento, disparo, dodge, stats, rendering.
+-- Gestiona componentes instalados para modificar stats y apariencia.
+-- Maneja invencibilidad temporal, flash visual, y powerups activos.
+-- Los stats se calculan dinámicamente desde los componentes del hangar.
+
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 local ComponentDefs = require("src.data.component_defs")

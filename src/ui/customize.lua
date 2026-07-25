@@ -1,3 +1,9 @@
+-- customize.lua
+-- Pantalla de selección de nave: muestra diseños disponibles.
+-- Permite elegir entre múltiples diseños de nave antes de jugar.
+-- Muestra: preview de nave, nombre, descripción, y botón PLAY.
+-- Layout responsivo basado en el tamaño de pantalla.
+
 local floor = math.floor
 local Screen = require("src.graphics.screen")
 local lg = love.graphics

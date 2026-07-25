@@ -1,3 +1,9 @@
+-- powerup.lua
+-- Entidad powerup: pickup temporal que otorga bonus al jugador.
+-- Tipos: double_shot, speed, magnet, shield, heal.
+-- Dura un tiempo limitado (duration) y parpadea antes de expirar.
+-- Se recoge por proximidad (magnet range o contacto directo).
+
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 

@@ -1,3 +1,9 @@
+-- shaders.lua
+-- Programas GLSL para shaders del juego.
+-- Incluye: post-procesado de luces, fondo de estrellas, nebulosas.
+-- Compatible con GLES (usa precision mediump float).
+-- Los shaders se compilan una vez y se reutilizan.
+
 local lg = love.graphics
 local lgNewShader = lg.newShader
 

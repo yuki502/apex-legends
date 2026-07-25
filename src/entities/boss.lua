@@ -1,5 +1,10 @@
+-- boss.lua
+-- Entidad jefe: patrones de ataque, rendering, colisión.
+-- 4 templates de jefe escalados por ola + super bosses (wave 1000+).
+-- Pool de balas pre-allocado para evitar garbage collection.
+-- Maneja: movimiento, disparo radial, patrones de ataque, colisión.
+
 local Object = require("lib.classic")
-local lume = require("lib.lume")
 local Screen = require("src.graphics.screen")
 
 local sin = math.sin

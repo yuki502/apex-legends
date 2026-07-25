@@ -1,3 +1,13 @@
+-- game.lua
+-- Módulo principal del juego. Orquesta todos los sistemas:
+--   - Estado del juego (menu, playing, shop, hangar, gameover)
+--   - Entidades (player, enemies, bullets, powerups, boss)
+--   - Sistemas (collision, wave progression, spawning)
+--   - UI (HUD, menus, touch controls)
+--   - Rendering (background, shader, effects)
+-- Gestiona el game loop completo: update → draw, y entrada de usuario.
+-- Responsabilidades: inicialización, actualización, renderizado, pooling de entidades.
+
 local Object = require("lib.classic")
 local Input = require("src.systems.input")
 local Audio = require("src.utils.audio")
@@ -24,59 +34,84 @@ local Inventory = require("src.utils.inventory")
 local Hangar = require("src.ui.hangar")
 local ComponentDefs = require("src.data.component_defs")
 local Loading = require("src.ui.loading")
-
 local Screen = require("src.graphics.screen")
+local C = require("src.data.constants")
+local DevMode = require("src.utils.dev_mode")
+local Logger = require("src.utils.logger")
+
 local lg = love.graphics
 local lw = Screen.getWidth
 local lh = Screen.getHeight
 
-local COMBO_COLOR_HIGH = {1.0, 0.2, 0.8}
-local COMBO_COLOR_MED = {1.0, 0.8, 0.2}
-
 local Game = Object:extend()
+local log = Logger.getInstance()
 
+--- Constructor del juego.
+-- Inicializa todas las entidades, sistemas, fuentes y configuración.
+-- Las loading tasks se ejecutan secuencialmente en love.update.
 function Game:new()
   local w, h = lw(), lh()
 
+  -- ═══════════════════════════════════════════════════════
+  -- SISTEMAS BASE
+  -- ═══════════════════════════════════════════════════════
+
   self.input = Input()
-  self.fireBtn = { x = w - 60, y = h / 2, radius = 40, radiusSq = 2500 }
+  self.fireBtn = { x = w - C.FIRE_BTN_X_OFFSET, y = h / 2, radius = C.FIRE_BTN_RADIUS, radiusSq = C.FIRE_BTN_RADIUS_SQ }
 
-  self.player = nil
-  self.bullets = {}
-  self.bulletCount = 0
-  self.enemyBullets = {}
-  self.enemyBulletCount = 0
-  self.enemies = {}
-  self.enemyCount = 0
-  self.powerups = {}
-  self.powerupCount = 0
-  self.boss = nil
-  self.effects = nil
-  self.shake = nil
+  -- ═══════════════════════════════════════════════════════
+  -- ENTIDADES
+  -- ═══════════════════════════════════════════════════════
 
-  self.score = 0
-  self.highScore = 0
-  self.wave = 0
-  self.enemiesInWave = 0
-  self.enemiesSpawned = 0
-  self.waveDelay = 0
-  self.waveActive = false
-  self.bossWave = false
-  self.spawnTimer = 0
-  self.spawnRate = 1.2
-  self.state = "loading"
-  self.combo = 0
-  self.maxCombo = 0
-  self.menuFadeOut = 0
-  self.selectedDesign = 1
-  self.paused = false
-  self.totalKills = 0
+  self.player = nil          -- Jugador actual (se crea en startPlaying)
+  self.bullets = {}          -- Balas del jugador (array plano, swap-remove)
+  self.bulletCount = 0       -- Cantidad de balas activas
+  self.enemyBullets = {}     -- Balas enemigas
+  self.enemyBulletCount = 0  -- Cantidad de balas enemigas activas
+  self.enemies = {}          -- Enemigos activos
+  self.enemyCount = 0        -- Cantidad de enemigos activos
+  self.powerups = {}         -- Powerups en pantalla
+  self.powerupCount = 0      -- Cantidad de powerups activos
+  self.boss = nil            -- Jefe actual (nil si no hay jefe)
+  self.effects = nil         -- Sistema de partículas (se crea en startPlaying)
+  self.shake = nil           -- Sistema de screen shake
 
-  self.font = lg.newFont(Screen.fontSize(18))
-  self.bigFont = lg.newFont(Screen.fontSize(40))
-  self.titleFont = lg.newFont(Screen.fontSize(22))
-  self.smallFont = lg.newFont(Screen.fontSize(14))
-  self.tinyFont = lg.newFont(Screen.fontSize(11))
+  -- ═══════════════════════════════════════════════════════
+  -- ESTADO DEL JUEGO
+  -- ═══════════════════════════════════════════════════════
+
+  self.score = 0             -- Puntuación actual
+  self.highScore = 0         -- High score guardado
+  self.wave = 0              -- Número de ola actual
+  self.enemiesInWave = 0     -- Total de enemigos en la ola actual
+  self.enemiesSpawned = 0    -- Enemigos ya generados en la ola
+  self.waveDelay = 0         -- Temporizador entre olas
+  self.waveActive = false    -- Si la ola actual está activa
+  self.bossWave = false      -- Si es ola de jefe (cada 10 olas)
+  self.spawnTimer = 0        -- Temporizador para spawning de enemigos
+  self.spawnRate = C.SPAWN_INTERVAL_BASE  -- Intervalo entre spawns
+  self.state = "loading"     -- Estado actual: loading/menu/customize/playing/shop/hangar/gameover
+  self.combo = 0             -- Combo actual (kills consecutivas)
+  self.maxCombo = 0          -- Combo máximo alcanzado
+  self.menuFadeOut = 0       -- Progreso de animación fade-out del menú
+  self.selectedDesign = 1    -- Diseño de nave seleccionado
+  self.paused = false        -- Si el juego está pausado
+  self.totalKills = 0        -- Total de kills en la partida
+
+  -- ═══════════════════════════════════════════════════════
+  -- FUENTES
+  -- ═══════════════════════════════════════════════════════
+
+  -- Todas las fuentes usan Screen.fontSize para escalado proporcional
+  self.font = lg.newFont(Screen.fontSize(18))       -- Fuente principal
+  self.bigFont = lg.newFont(Screen.fontSize(40))    -- Títulos grandes
+  self.titleFont = lg.newFont(Screen.fontSize(22))  -- Títulos medianos
+  self.smallFont = lg.newFont(Screen.fontSize(14))  -- Texto pequeño
+  self.tinyFont = lg.newFont(Screen.fontSize(11))   -- Texto muy pequeño
+
+  -- ═══════════════════════════════════════════════════════
+  -- SISTEMAS VISUALES
+  -- ═══════════════════════════════════════════════════════
 
   self.shader = PostShader()
   self.bgScrollY = 0
@@ -85,10 +120,8 @@ function Game:new()
   self.itemBtns = {}
   self.menuTimer = 0
 
-  -- Loading screen for asset initialization
   self.loading = Loading()
   self._loadingTasks = {
-    { name = "Loading settings...", fn = function() SettingsManager.init() end },
     { name = "Loading currency...", fn = function() CurrencyManager.init() end },
     { name = "Loading upgrades...", fn = function() UpgradeManager.init() end },
     { name = "Loading consumables...", fn = function() ConsumableManager.init() end },
@@ -105,8 +138,15 @@ function Game:new()
   self.leftHanded = SettingsManager.isLeftHanded()
   self._loadingIndex = 1
   self._loadingTotal = #self._loadingTasks
+
+  log:info("Game instance created")
 end
 
+--- Actualiza la pantalla de carga.
+-- Ejecuta una task por frame para mantener la UI responsive.
+-- Cuando terminan todas, cambia al estado "menu".
+-- @param dt Delta time
+-- @return true si sigue cargando, false si terminó
 function Game:_updateLoading(dt)
   if self.state ~= "loading" then return false end
 
@@ -134,6 +174,8 @@ function Game:_updateLoading(dt)
   return true
 end
 
+--- Inicializa una nueva partida.
+-- Crea el inventario y carga los componentes instalados del hangar.
 function Game:initRun()
   self.inventory = Inventory()
 
@@ -146,6 +188,9 @@ function Game:initRun()
   end
 end
 
+--- Inicia una nueva partida.
+-- Resetea score, wave, combo, crea player/effects/shake,
+-- y comienza la primera ola.
 function Game:startPlaying()
   self.state = "playing"
   self.wave = 0
@@ -227,6 +272,10 @@ function Game:togglePause()
   end
 end
 
+--- Actualiza el estado del juego según el estado actual.
+-- Maneja loading, menu, customize, playing, shop, hangar, gameover.
+-- En estado "playing": actualiza wave, player, enemies, collision.
+-- @param dt Delta time en segundos
 function Game:update(dt)
   -- Handle loading state first
   if self.state == "loading" then
@@ -335,6 +384,9 @@ function Game:update(dt)
   WaveManager.checkWaveComplete(self)
 end
 
+--- Actualiza las luces del shader post-procesado.
+-- Agrega luces en: jugador, balas enemigas, jefe, y centro del combo.
+-- Solo se ejecuta si el shader es soportado.
 function Game:_updateShaderLights()
   if not self.shader:isSupported() then return end
   self.shader:clearLights()
@@ -343,8 +395,9 @@ function Game:_updateShaderLights()
     self.shader:addLight(self.player.x, self.player.y, 0.3, 0.7, 1.0, 2500.0)
   end
 
+  local bullets = self.enemyBullets
   for i = 1, self.enemyBulletCount do
-    local b = self.enemyBullets[i]
+    local b = bullets[i]
     if b then
       self.shader:addLight(b.x, b.y, 1.0, 0.3, 0.2, 800.0)
     end
@@ -354,14 +407,18 @@ function Game:_updateShaderLights()
     self.shader:addLight(self.boss.x, self.boss.y, 1.0, 0.2, 0.1, 5000.0)
   end
 
-  if self.combo >= 5 then
+  if self.combo >= C.COMBO_THRESHOLD_MED then
     local px = self.player and self.player.x or lw() / 2
     local py = self.player and self.player.y or lh() / 2
-    local comboColor = self.combo >= 10 and COMBO_COLOR_HIGH or COMBO_COLOR_MED
+    local comboColor = self.combo >= C.COMBO_THRESHOLD_HIGH and C.COMBO_COLOR_HIGH or C.COMBO_COLOR_LOW
     self.shader:addLight(px, py - 30, comboColor[1], comboColor[2], comboColor[3], 2000.0)
   end
 end
 
+--- Renderiza todo el juego según el estado actual.
+-- Maneja el renderizado por estados: loading, menu, customize, shop, hangar, playing.
+-- En "playing": dibuja background → shader → entities → UI.
+-- Respeta el screen shake aplicando translate(ox, oy).
 function Game:draw()
   local ox, oy = self.shake and self.shake:getOffset() or 0, 0
   lg.push()
@@ -424,20 +481,28 @@ function Game:draw()
     return
   end
 
+  if DevMode.showHitboxes() then
+    if self.player then DevMode.drawHitbox(self.player) end
+  end
+
   for i = 1, self.bulletCount do
     self.bullets[i]:draw()
+    if DevMode.showHitboxes() then DevMode.drawHitbox(self.bullets[i]) end
   end
   for i = 1, self.enemyBulletCount do
     self.enemyBullets[i]:draw()
+    if DevMode.showHitboxes() then DevMode.drawHitbox(self.enemyBullets[i]) end
   end
   for i = 1, self.enemyCount do
     self.enemies[i]:draw()
+    if DevMode.showHitboxes() then DevMode.drawHitbox(self.enemies[i]) end
   end
   for i = 1, self.powerupCount do
     self.powerups[i]:draw()
   end
   if self.boss then
     self.boss:draw()
+    if DevMode.showHitboxes() then DevMode.drawHitbox(self.boss) end
   end
   self.player:draw()
 
@@ -457,6 +522,11 @@ function Game:draw()
   lg.pop()
 end
 
+--- Agrega una bala del jugador en la posición dada.
+-- Aplica stats de daño, velocidad, homing, ricochet, crit, lifesteal.
+-- @param x Posición X de spawn
+-- @param y Posición Y de spawn
+-- @param stats Tabla de estadísticas del jugador
 function Game:addBullet(x, y, stats)
   stats = stats or {}
   self.bulletCount = self.bulletCount + 1
@@ -485,30 +555,45 @@ function Game:addPowerup(x, y)
   self.powerups[self.powerupCount] = Powerup(x, y)
 end
 
+--- Elimina una bala por índice (swap-remove pattern).
+-- Mueve la última bala al índice eliminado para O(1).
 function Game:removeBullet(i)
   self.bullets[i] = self.bullets[self.bulletCount]
   self.bullets[self.bulletCount] = nil
   self.bulletCount = self.bulletCount - 1
 end
 
+--- Elimina una bala enemiga por índice (swap-remove pattern).
 function Game:removeEnemyBullet(i)
   self.enemyBullets[i] = self.enemyBullets[self.enemyBulletCount]
   self.enemyBullets[self.enemyBulletCount] = nil
   self.enemyBulletCount = self.enemyBulletCount - 1
 end
 
+--- Elimina un enemigo por índice (swap-remove pattern).
 function Game:removeEnemy(i)
   self.enemies[i] = self.enemies[self.enemyCount]
   self.enemies[self.enemyCount] = nil
   self.enemyCount = self.enemyCount - 1
 end
 
+--- Elimina un powerup por índice (swap-remove pattern).
 function Game:removePowerup(i)
   self.powerups[i] = self.powerups[self.powerupCount]
   self.powerups[self.powerupCount] = nil
   self.powerupCount = self.powerupCount - 1
 end
 
+--- Maneja touch/mouse presionado.
+-- Delega al sistema apropiado según el estado actual:
+--   - hangar: drag-and-drop de componentes
+--   - shop: compra de items
+--   - customize: selección de nave
+--   - playing: fire button, items, joystick
+-- @param id ID del touch (0 para mouse)
+-- @param tx Coordenada X virtual
+-- @param ty Coordenada Y virtual
+-- @return true si el evento fue manejado
 function Game:touchpressed(id, tx, ty)
   if self.state == "hangar" then
     self.hangar:mousepressed(tx, ty, 1)
@@ -565,6 +650,10 @@ function Game:touchreleased(id)
   return self.input:touchreleased(id)
 end
 
+--- Compra un componente de la tienda.
+-- Verifica si hay suficientes créditos y agrega al inventario.
+-- @param index Índice del componente en componentDropPool
+-- @return true si la compra fue exitosa
 function Game:purchaseComponent(index)
   local item = self.componentDropPool[index]
   if not item or item.bought then return false end

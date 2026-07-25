@@ -1,11 +1,17 @@
+-- wave_manager.lua
+-- Gestión de progresión de olas: spawning, countdown, boss waves.
+-- Cada 10 olas: jefe. Cada 5 olas: hangar. Cada 10 olas: tienda.
+-- Escalado progresivo de enemigos por ola.
+-- Maneja: countdown entre olas, transición a shop/hangar.
+
 local WaveManager = {}
 local floor = math.floor
 
-local BASE_ENEMIES = 5
-local ENEMIES_PER_WAVE = 2
-local WAVE_DELAY = 2.0
-local SHOP_DELAY = 0.5
-local COUNTDOWN_TIME = 3.0
+local BASE_ENEMIES = 5        -- Enemigos base por ola
+local ENEMIES_PER_WAVE = 2    -- Enemigos adicionales por ola
+local WAVE_DELAY = 2.0        -- Delay entre olas (segundos)
+local SHOP_DELAY = 0.5        -- Delay antes de abrir tienda
+local COUNTDOWN_TIME = 3.0    -- Duración del countdown (segundos)
 
 function WaveManager.update(g, dt)
   if g.state ~= "playing" or g.paused then return end

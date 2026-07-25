@@ -1,3 +1,10 @@
+-- effects.lua
+-- Sistema de efectos visuales: partículas y texto flotante.
+-- Partículas: explosiones, muzzle flash, coin pickup, powerup collect.
+-- Texto flotante: combo numbers, CRIT!, damage numbers.
+-- Límites: 256 partículas, 32 textos (overflow se descarta).
+-- Usa flux para animaciones de movimiento y fade.
+
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 local flux = require("lib.flux")
@@ -11,8 +18,8 @@ local lh = Screen.getHeight
 
 local Effects = Object:extend()
 
-local MAX_PARTICLES = 256
-local MAX_TEXTS = 32
+local MAX_PARTICLES = 256  -- Máximo de partículas activas
+local MAX_TEXTS = 32        -- Máximo de textos flotantes activos
 
 function Effects:new()
   self.stars = {}

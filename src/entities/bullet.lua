@@ -1,3 +1,9 @@
+-- bullet.lua
+-- Entidad bala: movimiento, rendering, colisión.
+-- Soporta: homing (seguir enemigos), ricochet (rebotar), crit, lifesteal.
+-- Pool de vértices pre-allocado para rendering eficiente.
+-- Ambas balas (jugador y enemigo) usan esta clase.
+
 local Object = require("lib.classic")
 
 local Screen = require("src.graphics.screen")

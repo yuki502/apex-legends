@@ -1,5 +1,10 @@
+-- hangar.lua
+-- Interfaz de hangar: drag-and-drop de componentes en slots de la nave.
+-- Muestra slots disponibles, componentes en inventario, stats del jugador.
+-- Soporta mouse y touch para arrastrar componentes entre slots.
+-- Usa flux para animaciones de transición.
+
 local Object = require("lib.classic")
-local lume = require("lib.lume")
 local flux = require("lib.flux")
 local ComponentDefs = require("src.data.component_defs")
 

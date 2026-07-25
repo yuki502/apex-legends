@@ -1,5 +1,15 @@
+-- synergy_system.lua
+-- Sistema de sinergias: 14+ combinaciones de componentes.
+-- Cada sinergia requiere una combinación específica de componentes.
+-- Se evalúan cada frame basándose en los componentes instalados.
+-- Las sinergies activas otorgan bonus estadísticos.
+
 local SYNERGIES = {}
 
+--- Registra una nueva sinergia.
+-- @param id Identificador único
+-- @param name Nombre para mostrar
+-- @param checkFn Función de verificación: function(components) → boolean
 local function add(id, name, desc, color, checkFn)
   SYNERGIES[id] = {
     name = name,

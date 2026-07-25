@@ -1,3 +1,8 @@
+-- state.lua
+-- Transiciones de estado del juego: startWave, gameOver, reset.
+-- Maneja: cambio de estado, guardado de high score, reset de partículas.
+-- Las funciones son llamadas desde game.lua y collision.lua.
+
 local State = {}
 
 function State.startWave(g)
@@ -27,7 +32,6 @@ function State.reset(g)
   local Audio = require("src.utils.audio")
   local ShipDesigns = require("src.data.ship_designs")
   local UpgradeManager = require("src.managers.upgrade_manager")
-  local ConsumableManager = require("src.managers.consumable_manager")
   local SettingsManager = require("src.managers.settings_manager")
   local Inventory = require("src.utils.inventory")
 

@@ -1,5 +1,12 @@
+-- consumable_manager.lua
+-- Gestión de consumibles: repair kit, bomb, shield, damage boost.
+-- Se compran en la tienda y se usan durante el juego.
+-- Cada consumible tiene: costo, stock máximo, y efecto al usar.
+-- Persiste entre partidas via consumables.dat.
+
 local ConsumableManager = {}
 
+-- Definición de consumibles disponibles
 local DEF = {
   repair = {
     name = "Repair Kit",

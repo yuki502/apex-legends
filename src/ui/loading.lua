@@ -1,5 +1,8 @@
--- Loading screen system
--- Shows progress while assets load, then transitions to main menu
+-- loading.lua
+-- Pantalla de carga: muestra progreso mientras se cargan assets.
+-- Ejecuta tareas secuenciales (una por frame) para mantener UI responsive.
+-- Muestra: barra de progreso, nombre de tarea, tips, y "READY!" al terminar.
+-- Transición automática al menú principal al completar.
 
 local Screen = require("src.graphics.screen")
 local lg = love.graphics

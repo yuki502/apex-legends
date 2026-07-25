@@ -10,4 +10,6 @@ function love.conf(t)
   t.identity = "apex-legends"
   t.modules.joystick = false
   t.modules.physics = false
+  t.modules.thread = true
+  t.externalstorage = true
 end

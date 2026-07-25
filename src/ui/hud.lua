@@ -1,3 +1,9 @@
+-- hud.lua
+-- Interfaz de heads-up display durante el juego.
+-- Muestra: vida, escudo, score, combo, monedas, powerups activos,
+-- wave actual, y mensajes de game over / pausa.
+-- Se renderiza encima de las entidades pero debajo de overlays.
+
 local ceil = math.ceil
 local Screen = require("src.graphics.screen")
 local lg = love.graphics

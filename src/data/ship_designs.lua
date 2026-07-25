@@ -1,7 +1,14 @@
+-- ship_designs.lua
+-- Diseños visuales de naves disponibles para el jugador.
+-- Cada diseño tiene: nombre, vértices, color, accent.
+-- Los vértices definen la forma de la nave al renderizar.
+-- Se muestran en la pantalla de selección (customize).
+
 local lume = require("lib.lume")
 
 local ShipDesigns = {}
 
+-- Lista de diseños disponibles
 ShipDesigns.list = {
   {
     name = "FALCON",

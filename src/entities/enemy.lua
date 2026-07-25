@@ -1,3 +1,10 @@
+-- enemy.lua
+-- Entidad enemiga: spawning, comportamientos, disparo, rendering.
+-- 10 tipos de enemigos con comportamientos distintos:
+--   straight, dodge, strafe, zonal, sniper, kamikaze, tank, bomber, dash, shield
+-- Los stats se escalan por ola usando enemy_types.getScaling().
+-- Maneja: movimiento, disparo periódico, colisión con jugador.
+
 local Object = require("lib.classic")
 local lume = require("lib.lume")
 local Screen = require("src.graphics.screen")

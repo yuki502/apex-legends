@@ -1,3 +1,9 @@
+-- post_shader.lua
+-- Gestor de shader post-procesado con sistema de luces dinámicas.
+-- Agrega luces en: jugador, balas enemigas, jefe, combo.
+-- Usa virtual dims (Screen) para mantener alineación con entidades.
+-- Soporta resize, apply/remove por frame, y fallback si no soportado.
+
 local Object = require("lib.classic")
 local Screen = require("src.graphics.screen")
 

@@ -1,5 +1,12 @@
+-- enemy_types.lua
+-- Definición de 10 tipos de enemigos con comportamientos distintos.
+-- Cada tipo tiene: nombre, vértices, color, hp, radius, speed, damage, behavior.
+-- Los comportamientos: straight, dodge, strafe, zonal, sniper, kamikaze, tank, bomber, dash, shield.
+-- Escalado por ola: hp ×1.06, damage ×1.04, speed ×1.02.
+
 local EnemyTypes = {}
 
+-- Definición de tipos de enemigos
 EnemyTypes.DEF = {
   scout = {
     name = "scout",

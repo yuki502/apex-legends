@@ -1,8 +1,14 @@
+-- audio.lua
+-- Gestión de audio: efectos de sonido y música.
+-- Carga archivos .ogg/.mp3 desde assets/audio/.
+-- Soporta: play sloop, play music, volumen configurable.
+-- La música se reproduce en loop, efectos se reproducen una vez.
+
 local Audio = {}
 
-local sounds = {}
-local musicTracks = {}
-local currentMusic = nil
+local sounds = {}         -- Efectos de sonido cargados
+local musicTracks = {}    -- Pistas de música cargadas
+local currentMusic = nil  -- Pista de música actual
 
 function Audio.load()
   local sfxFiles = {
