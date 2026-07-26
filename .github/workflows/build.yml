@@ -63,10 +63,10 @@ jobs:
       - name: Install LÖVE + xvfb
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
-          wget -q https://github.com/love2d/love/releases/download/11.5/love-11.5-linux-x86_64.tar.gz -O /tmp/love.tar.gz
-          tar -xzf /tmp/love.tar.gz -C /tmp
-          echo "/tmp/love-11.5-linux-x86_64" >> $GITHUB_PATH
+          sudo apt-get install -y xvfb software-properties-common
+          sudo add-apt-repository -y ppa:bartbes/love-stable
+          sudo apt-get update
+          sudo apt-get install -y love
 
       - name: Run tests (from source)
         run: timeout 60 xvfb-run love . --test
