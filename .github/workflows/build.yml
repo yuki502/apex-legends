@@ -69,7 +69,7 @@ jobs:
           sudo apt-get install -y love
 
       - name: Run tests (from source)
-        run: timeout 60 xvfb-run love test.lua
+        run: timeout 60 xvfb-run env APEX_TEST_MODE=1 love .
 
       - name: Run tests (from .love artifact)
         uses: actions/download-artifact@v4
@@ -78,7 +78,7 @@ jobs:
           path: dist
 
       - name: Run tests on built artifact
-        run: timeout 60 xvfb-run love dist/apex-legends.love
+        run: timeout 60 xvfb-run env APEX_TEST_MODE=1 love dist/apex-legends.love
 
   # ──────────────────────────────────────────────
   # BUILD FOR ANDROID (manual trigger planned)

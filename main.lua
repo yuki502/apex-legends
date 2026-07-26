@@ -23,7 +23,24 @@ local devModeEnabled   -- Si el modo desarrollador está activo
 -- ═══════════════════════════════════════════════════════
 
 --- Callback de LÖVE: se ejecuta una vez al iniciar el juego.
+-- Si la variable de entorno APEX_TEST_MODE=1, corre tests y sale.
 function love.load()
+  if os.getenv("APEX_TEST_MODE") == "1" then
+    local runner = require("tests.test_runner")
+    local testFiles = {
+      "tests/unit/test_constants.lua",
+      "tests/unit/test_synergies.lua",
+      "tests/unit/test_benchmarks.lua",
+    }
+    local success = true
+    for _, file in ipairs(testFiles) do
+      local ok = runner.runFile(file)
+      if not ok then success = false end
+    end
+    love.event.quit(success and 0 or 1)
+    return
+  end
+
   love.graphics.setBackgroundColor(0, 0, 0)
   love.keyboard.setKeyRepeat(false)
   Screen.init()

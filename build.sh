@@ -68,10 +68,10 @@ run_tests_love() {
     return 1
   fi
   if command -v xvfb-run &> /dev/null; then
-    xvfb-run love "$PROJECT_DIR" --test
+    APEX_TEST_MODE=1 xvfb-run love "$PROJECT_DIR"
   else
     print_warn "xvfb-run not found, trying direct (may fail without display)"
-    love "$PROJECT_DIR" --test
+    APEX_TEST_MODE=1 love "$PROJECT_DIR"
   fi
 }
 
