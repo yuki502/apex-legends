@@ -19,28 +19,11 @@ local log              -- Instancia del logger
 local devModeEnabled   -- Si el modo desarrollador está activo
 
 -- ═══════════════════════════════════════════════════════
--- CLI: TEST MODE
+-- INICIALIZACIÓN
 -- ═══════════════════════════════════════════════════════
 
---- Si se ejecuta con `love . --test`, corre todos los tests de unidad
--- sin inicializar el juego completo y sale con código 0/1.
+--- Callback de LÖVE: se ejecuta una vez al iniciar el juego.
 function love.load()
-  if arg and arg[1] == "--test" then
-    local runner = require("tests.test_runner")
-    local testFiles = {
-      "tests/unit/test_constants.lua",
-      "tests/unit/test_synergies.lua",
-      "tests/unit/test_benchmarks.lua",
-    }
-    local success = true
-    for _, file in ipairs(testFiles) do
-      local ok = runner.runFile(file)
-      if not ok then success = false end
-    end
-    love.event.quit(success and 0 or 1)
-    return
-  end
-
   love.graphics.setBackgroundColor(0, 0, 0)
   love.keyboard.setKeyRepeat(false)
   Screen.init()
