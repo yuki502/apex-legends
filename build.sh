@@ -142,7 +142,11 @@ case "${1:-love}" in
     ;;
   lua-test)
     validate_structure
-    run_tests_lua
+    if command -v lua &> /dev/null; then
+      run_tests_lua
+    else
+      print_warn "Lua not installed, skipping Lua-only tests"
+    fi
     ;;
   all)
     cleanup
