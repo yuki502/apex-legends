@@ -9,9 +9,11 @@ WORK_DIR="${ANDROID_DIR}/love-android-sdl2"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 print_step() { echo -e "${GREEN}[ANDROID]${NC} $1"; }
+print_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 print_err() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 cleanup() {
