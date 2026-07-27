@@ -29,7 +29,6 @@ jobs:
 
     - name: Install Android SDK
       uses: android-actions/setup-android@v4
-      uses: android-actions/setup-android@v4
 
     - name: Install NDK and SDK
       run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}" "platforms;android-${{ env.API_LEVEL }}" "build-tools;${{ env.API_LEVEL }}.0.0" "cmake;3.22.1"
@@ -80,7 +79,6 @@ jobs:
         echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
 
     - name: Install Android SDK
-      uses: android-actions/setup-android@v4
       uses: android-actions/setup-android@v4
 
     - name: Install NDK and SDK
