@@ -99,11 +99,23 @@ jobs:
     - name: Configure gradle.properties
       run: printf 'app.name=Apex Legends\napp.application_id=com.apexlegends.spaceshooter\napp.orientation=landscape\napp.version_code=1\napp.version_name=1.0.0\nandroid.enableJetifier=false\nandroid.useAndroidX=true\nandroid.nonTransitiveRClass=true\nandroid.nonFinalResIds=true\nandroid.dependency.useConstraints=true\n' > love-android/gradle.properties
 
-    - name: Generate debug keystore
-      run: keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
-
-    - name: Configure signing
-      run: printf 'android { signingConfigs { debug { storeFile file("/tmp/debug.keystore") storePassword "android" keyAlias "androiddebugkey" keyPassword "android" } } buildTypes.release.signingConfig signingConfigs.debug }' >> love-android/app/build.gradle
+    - name: Configure signing for release
+      run: |
+        # Generate debug keystore (used for both debug and release builds)
+        keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
+        # Create a signing config script
+        cat > love-android/signing.gradle << 'GRADLE'
+android.signingConfigs.create("release") {
+    storeFile file("/tmp/debug.keystore")
+    storePassword "android"
+    keyAlias "androiddebugkey"
+    keyPassword "android"
+}
+android.buildTypes.release.signingConfig = android.signingConfigs.release
+GRADLE
+        # Apply it from build.gradle
+        echo '' >> love-android/app/build.gradle
+        echo "apply from: '../signing.gradle'" >> love-android/app/build.gradle
 
     - name: Build Release APK
       run: cd love-android && chmod +x gradlew && ./gradlew assembleEmbedNoRecordRelease 2>&1 | tee build-release.log
