@@ -6,8 +6,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
 
 env:
   JAVA_VERSION: '17'
@@ -17,6 +15,7 @@ env:
 jobs:
   build-debug:
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
     - uses: actions/checkout@v4
@@ -31,61 +30,36 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
 
-    - name: Install NDK + SDK platform
-      run: |
-        sdkmanager --install "ndk;${{ env.NDK_VERSION }}" \
-          "platforms;android-${{ env.API_LEVEL }}" \
-          "build-tools;${{ env.API_LEVEL }}.0.0" \
-          "cmake;3.22.1" 2>&1
+    - name: Install NDK and SDK
+      run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}" "platforms;android-${{ env.API_LEVEL }}" "build-tools;${{ env.API_LEVEL }}.0.0" "cmake;3.22.1"
 
-    - name: Install dependencies
+    - name: Install zip
       run: sudo apt-get update && sudo apt-get install -y zip unzip
 
     - name: Package .love archive
-      run: |
-        zip -9 -r /tmp/game.love . \
-          -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
+      run: zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
     - name: Clone love-android
-      run: |
-        git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android
-        rm -rf love-android/.git
+      run: git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
 
     - name: Copy game files
-      run: |
-        mkdir -p love-android/app/src/embed/assets
-        cp /tmp/game.love love-android/app/src/embed/assets/game.love
+      run: mkdir -p love-android/app/src/embed/assets && cp /tmp/game.love love-android/app/src/embed/assets/game.love
 
     - name: Configure gradle.properties
-      run: |
-        cat > love-android/gradle.properties << 'EOF'
-        app.name=Apex Legends
-        app.application_id=com.apexlegends.spaceshooter
-        app.orientation=landscape
-        app.version_code=1
-        app.version_name=1.0.0
-        android.enableJetifier=false
-        android.useAndroidX=true
-        android.nonTransitiveRClass=true
-        android.nonFinalResIds=true
-        android.dependency.useConstraints=true
-        EOF
+      run: printf 'app.name=Apex Legends\napp.application_id=com.apexlegends.spaceshooter\napp.orientation=landscape\napp.version_code=1\napp.version_name=1.0.0\nandroid.enableJetifier=false\nandroid.useAndroidX=true\nandroid.nonTransitiveRClass=true\nandroid.nonFinalResIds=true\nandroid.dependency.useConstraints=true\n' > love-android/gradle.properties
 
     - name: Build Debug APK
-      run: |
-        cd love-android
-        chmod +x gradlew
-        ./gradlew assembleEmbedNoRecordDebug 2>&1 | tee build-debug.log
+      run: cd love-android && chmod +x gradlew && ./gradlew assembleEmbedNoRecordDebug 2>&1 | tee build-debug.log
+      continue-on-error: true
 
     - name: Upload Debug APK
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-debug
         path: love-android/app/build/outputs/apk/embedNoRecord/debug/*.apk
         retention-days: 30
 
-    - name: Save Build Errors (Debug)
+    - name: Upload Build Errors (Debug)
       if: failure()
       uses: actions/upload-artifact@v4
       with:
@@ -95,6 +69,7 @@ jobs:
 
   build-release:
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
     - uses: actions/checkout@v4
@@ -109,120 +84,48 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
 
-    - name: Install NDK + SDK platform
-      run: |
-        sdkmanager --install "ndk;${{ env.NDK_VERSION }}" \
-          "platforms;android-${{ env.API_LEVEL }}" \
-          "build-tools;${{ env.API_LEVEL }}.0.0" \
-          "cmake;3.22.1" 2>&1
+    - name: Install NDK and SDK
+      run: sdkmanager --install "ndk;${{ env.NDK_VERSION }}" "platforms;android-${{ env.API_LEVEL }}" "build-tools;${{ env.API_LEVEL }}.0.0" "cmake;3.22.1"
 
-    - name: Install dependencies
+    - name: Install zip
       run: sudo apt-get update && sudo apt-get install -y zip unzip
 
     - name: Package .love archive
-      run: |
-        zip -9 -r /tmp/game.love . \
-          -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
+      run: zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
     - name: Clone love-android
-      run: |
-        git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android
-        rm -rf love-android/.git
+      run: git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
 
     - name: Copy game files
-      run: |
-        mkdir -p love-android/app/src/embed/assets
-        cp /tmp/game.love love-android/app/src/embed/assets/game.love
+      run: mkdir -p love-android/app/src/embed/assets && cp /tmp/game.love love-android/app/src/embed/assets/game.love
 
     - name: Configure gradle.properties
-      run: |
-        cat > love-android/gradle.properties << 'EOF'
-        app.name=Apex Legends
-        app.application_id=com.apexlegends.spaceshooter
-        app.orientation=landscape
-        app.version_code=1
-        app.version_name=1.0.0
-        android.enableJetifier=false
-        android.useAndroidX=true
-        android.nonTransitiveRClass=true
-        android.nonFinalResIds=true
-        android.dependency.useConstraints=true
-        EOF
+      run: printf 'app.name=Apex Legends\napp.application_id=com.apexlegends.spaceshooter\napp.orientation=landscape\napp.version_code=1\napp.version_name=1.0.0\nandroid.enableJetifier=false\nandroid.useAndroidX=true\nandroid.nonTransitiveRClass=true\nandroid.nonFinalResIds=true\nandroid.dependency.useConstraints=true\n' > love-android/gradle.properties
 
-    - name: Generate debug keystore for release signing
-      run: |
-        keytool -genkey -v -keystore /tmp/debug.keystore \
-          -storepass android -alias androiddebugkey -keypass android \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -dname "CN=Android Debug, O=Android, C=US"
+    - name: Generate debug keystore
+      run: keytool -genkey -v -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug, O=Android, C=US"
 
-    - name: Configure signing for release
-      run: |
-        cat > /tmp/signing.gradle << 'SIGNING'
-        android {
-          signingConfigs {
-            debug {
-              storeFile file("/tmp/debug.keystore")
-              storePassword "android"
-              keyAlias "androiddebugkey"
-              keyPassword "android"
-            }
-          }
-          buildTypes.release.signingConfig signingConfigs.debug
-        }
-SIGNING
-        cat /tmp/signing.gradle >> love-android/app/build.gradle
+    - name: Configure signing
+      run: printf 'android { signingConfigs { debug { storeFile file("/tmp/debug.keystore") storePassword "android" keyAlias "androiddebugkey" keyPassword "android" } } buildTypes.release.signingConfig signingConfigs.debug }' >> love-android/app/build.gradle
 
     - name: Build Release APK
-      run: |
-        cd love-android
-        chmod +x gradlew
-        ./gradlew assembleEmbedNoRecordRelease 2>&1 | tee build-release.log
+      run: cd love-android && chmod +x gradlew && ./gradlew assembleEmbedNoRecordRelease 2>&1 | tee build-release.log
+      continue-on-error: true
 
     - name: Upload Release APK
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-release
         path: love-android/app/build/outputs/apk/embedNoRecord/release/*.apk
         retention-days: 30
 
-    - name: Save Build Errors (Release)
+    - name: Upload Build Errors (Release)
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: build-error-logs-release
         path: love-android/build-release.log
         retention-days: 7
-
-  create-release:
-    needs: [build-debug, build-release]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download Debug APK
-      uses: actions/download-artifact@v4
-      with:
-        name: apex-legends-debug
-        path: ./artifacts
-
-    - name: Download Release APK
-      uses: actions/download-artifact@v4
-      with:
-        name: apex-legends-release
-        path: ./artifacts
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-        files: ./artifacts/*.apk
 
   notify-status:
     needs: [build-debug, build-release]
@@ -233,5 +136,5 @@ SIGNING
     - name: Build Status Summary
       run: |
         echo "## Build Status Report" >> $GITHUB_STEP_SUMMARY
-        echo "- Debug Build: ${{ needs.build-debug.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Release Build: ${{ needs.build-release.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Debug: ${{ needs.build-debug.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Release: ${{ needs.build-release.result }}" >> $GITHUB_STEP_SUMMARY
