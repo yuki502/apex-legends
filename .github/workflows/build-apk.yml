@@ -12,8 +12,6 @@ on:
 env:
   JAVA_VERSION: '17'
   NDK_VERSION: '27.3.13750724'
-  BUILD_TOOLS_VERSION: '35.0.0'
-  CMAKE_VERSION: '3.21.0+'
   API_LEVEL: '35'
 
 jobs:
@@ -30,13 +28,15 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Set up Android SDK
+    - name: Setup Android SDK
       uses: android-actions/setup-android@v4
-      with:
-        api-levels: ${{ env.API_LEVEL }}
-        ndk-version: ${{ env.NDK_VERSION }}
-        build-tools-version: ${{ env.BUILD_TOOLS_VERSION }}
-        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Install NDK + SDK platform
+      run: |
+        sdkmanager --install "ndk;${{ env.NDK_VERSION }}" \
+          "platforms;android-${{ env.API_LEVEL }}" \
+          "build-tools;${{ env.API_LEVEL }}.0.0" \
+          "cmake;3.22.1" 2>&1
 
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y zip unzip
@@ -106,13 +106,15 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Set up Android SDK
+    - name: Setup Android SDK
       uses: android-actions/setup-android@v4
-      with:
-        api-levels: ${{ env.API_LEVEL }}
-        ndk-version: ${{ env.NDK_VERSION }}
-        build-tools-version: ${{ env.BUILD_TOOLS_VERSION }}
-        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Install NDK + SDK platform
+      run: |
+        sdkmanager --install "ndk;${{ env.NDK_VERSION }}" \
+          "platforms;android-${{ env.API_LEVEL }}" \
+          "build-tools;${{ env.API_LEVEL }}.0.0" \
+          "cmake;3.22.1" 2>&1
 
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y zip unzip
@@ -147,24 +149,29 @@ jobs:
         android.dependency.useConstraints=true
         EOF
 
-    - name: Configure release signing (debug keystore)
+    - name: Generate debug keystore for release signing
       run: |
         keytool -genkey -v -keystore /tmp/debug.keystore \
           -storepass android -alias androiddebugkey -keypass android \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android Debug, O=Android, C=US"
-        cat >> love-android/app/build.gradle << 'SIGNING'
 
-        android.signingConfigs {
-          debug {
-            storeFile file("/tmp/debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
+    - name: Configure signing for release
+      run: |
+        cat > /tmp/signing.gradle << 'SIGNING'
+        android {
+          signingConfigs {
+            debug {
+              storeFile file("/tmp/debug.keystore")
+              storePassword "android"
+              keyAlias "androiddebugkey"
+              keyPassword "android"
+            }
           }
+          buildTypes.release.signingConfig signingConfigs.debug
         }
-        android.buildTypes.release.signingConfig android.signingConfigs.debug
 SIGNING
+        cat /tmp/signing.gradle >> love-android/app/build.gradle
 
     - name: Build Release APK
       run: |
@@ -209,15 +216,13 @@ SIGNING
         path: ./artifacts
 
     - name: Create GitHub Release
-      id: create_release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
-        files: |
-          ./artifacts/*.apk
+        files: ./artifacts/*.apk
 
   notify-status:
     needs: [build-debug, build-release]
@@ -230,4 +235,3 @@ SIGNING
         echo "## Build Status Report" >> $GITHUB_STEP_SUMMARY
         echo "- Debug Build: ${{ needs.build-debug.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Release Build: ${{ needs.build-release.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Workflow Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
