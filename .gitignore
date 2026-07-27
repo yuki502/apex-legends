@@ -24,4 +24,5 @@ Thumbs.db
 node_modules/
 
 # Android build
+android/love-android/
 android/love-android-sdl2/

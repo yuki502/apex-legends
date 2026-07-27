@@ -7,69 +7,82 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly build
+    - cron: '0 0 * * 0'
 
 env:
   JAVA_VERSION: '17'
-  NDK_VERSION: '25.0.8775105'
-  BUILD_TOOLS_VERSION: '31.0.0'
-  API_LEVEL: '31'
+  NDK_VERSION: '27.3.13750724'
+  BUILD_TOOLS_VERSION: '35.0.0'
+  CMAKE_VERSION: '3.21.0+'
+  API_LEVEL: '35'
 
 jobs:
   build-debug:
     runs-on: ubuntu-latest
-    continue-on-error: true
-    
+
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Set up JDK 11
+
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         cache: gradle
-    
+
     - name: Set up Android SDK
       uses: android-actions/setup-android@v4
       with:
         api-levels: ${{ env.API_LEVEL }}
         ndk-version: ${{ env.NDK_VERSION }}
         build-tools-version: ${{ env.BUILD_TOOLS_VERSION }}
-    
-    - name: Install zip
-      run: sudo apt-get install -y zip
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y zip unzip
 
     - name: Package .love archive
       run: |
-        zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
+        zip -9 -r /tmp/game.love . \
+          -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
-    - name: Clone LÖVE Android
+    - name: Clone love-android
       run: |
-        git clone --depth 1 https://github.com/love2d/love-android-sdl2.git love-android
-        cd love-android
-        git submodule update --init --recursive
-      continue-on-error: true
+        git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android
+        rm -rf love-android/.git
 
     - name: Copy game files
       run: |
-        mkdir -p love-android/app/src/main/assets
-        cp /tmp/game.love love-android/app/src/main/assets/game.love
-      continue-on-error: true
+        mkdir -p love-android/app/src/embed/assets
+        cp /tmp/game.love love-android/app/src/embed/assets/game.love
+
+    - name: Configure gradle.properties
+      run: |
+        cat > love-android/gradle.properties << 'EOF'
+        app.name=Apex Legends
+        app.application_id=com.apexlegends.spaceshooter
+        app.orientation=landscape
+        app.version_code=1
+        app.version_name=1.0.0
+        android.enableJetifier=false
+        android.useAndroidX=true
+        android.nonTransitiveRClass=true
+        android.nonFinalResIds=true
+        android.dependency.useConstraints=true
+        EOF
 
     - name: Build Debug APK
       run: |
         cd love-android
         chmod +x gradlew
-        ./gradlew assembleDebug 2>&1 | tee build-debug.log
-      continue-on-error: true
+        ./gradlew assembleEmbedNoRecordDebug 2>&1 | tee build-debug.log
 
     - name: Upload Debug APK
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-debug
-        path: love-android/app/build/outputs/apk/debug/app-debug.apk
+        path: love-android/app/build/outputs/apk/embedNoRecord/debug/*.apk
         retention-days: 30
 
     - name: Save Build Errors (Debug)
@@ -80,84 +93,91 @@ jobs:
         path: love-android/build-debug.log
         retention-days: 7
 
-    - name: Comment on PR - Debug Success
-      if: success() && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '✅ Debug APK build successful! Download from Artifacts.'
-          })
-
-    - name: Comment on PR - Debug Failed
-      if: failure() && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '❌ Debug APK build failed! Check build-error-logs-debug artifact.'
-          })
-
   build-release:
     runs-on: ubuntu-latest
-    continue-on-error: true
-    
+
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Set up JDK 11
+
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         cache: gradle
-    
+
     - name: Set up Android SDK
       uses: android-actions/setup-android@v4
       with:
         api-levels: ${{ env.API_LEVEL }}
         ndk-version: ${{ env.NDK_VERSION }}
         build-tools-version: ${{ env.BUILD_TOOLS_VERSION }}
-    
-    - name: Install zip
-      run: sudo apt-get install -y zip
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y zip unzip
 
     - name: Package .love archive
       run: |
-        zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
+        zip -9 -r /tmp/game.love . \
+          -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
-    - name: Clone LÖVE Android
+    - name: Clone love-android
       run: |
-        git clone --depth 1 https://github.com/love2d/love-android-sdl2.git love-android
-        cd love-android
-        git submodule update --init --recursive
-      continue-on-error: true
+        git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android
+        rm -rf love-android/.git
 
     - name: Copy game files
       run: |
-        mkdir -p love-android/app/src/main/assets
-        cp /tmp/game.love love-android/app/src/main/assets/game.love
-      continue-on-error: true
+        mkdir -p love-android/app/src/embed/assets
+        cp /tmp/game.love love-android/app/src/embed/assets/game.love
+
+    - name: Configure gradle.properties
+      run: |
+        cat > love-android/gradle.properties << 'EOF'
+        app.name=Apex Legends
+        app.application_id=com.apexlegends.spaceshooter
+        app.orientation=landscape
+        app.version_code=1
+        app.version_name=1.0.0
+        android.enableJetifier=false
+        android.useAndroidX=true
+        android.nonTransitiveRClass=true
+        android.nonFinalResIds=true
+        android.dependency.useConstraints=true
+        EOF
+
+    - name: Configure release signing (debug keystore)
+      run: |
+        keytool -genkey -v -keystore /tmp/debug.keystore \
+          -storepass android -alias androiddebugkey -keypass android \
+          -keyalg RSA -keysize 2048 -validity 10000 \
+          -dname "CN=Android Debug, O=Android, C=US"
+        cat >> love-android/app/build.gradle << 'SIGNING'
+
+        android.signingConfigs {
+          debug {
+            storeFile file("/tmp/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+          }
+        }
+        android.buildTypes.release.signingConfig android.signingConfigs.debug
+SIGNING
 
     - name: Build Release APK
       run: |
         cd love-android
         chmod +x gradlew
-        ./gradlew assembleRelease 2>&1 | tee build-release.log
-      continue-on-error: true
+        ./gradlew assembleEmbedNoRecordRelease 2>&1 | tee build-release.log
 
     - name: Upload Release APK
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-release
-        path: love-android/app/build/outputs/apk/release/app-release.apk
+        path: love-android/app/build/outputs/apk/embedNoRecord/release/*.apk
         retention-days: 30
 
     - name: Save Build Errors (Release)
@@ -168,51 +188,26 @@ jobs:
         path: love-android/build-release.log
         retention-days: 7
 
-    - name: Comment on PR - Release Success
-      if: success() && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '✅ Release APK build successful! Download from Artifacts.'
-          })
-
-    - name: Comment on PR - Release Failed
-      if: failure() && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '❌ Release APK build failed! Check build-error-logs-release artifact.'
-          })
-
   create-release:
     needs: [build-debug, build-release]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    continue-on-error: true
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Download Debug APK
       uses: actions/download-artifact@v4
       with:
         name: apex-legends-debug
         path: ./artifacts
-    
+
     - name: Download Release APK
       uses: actions/download-artifact@v4
       with:
         name: apex-legends-release
         path: ./artifacts
-    
+
     - name: Create GitHub Release
       id: create_release
       uses: softprops/action-gh-release@v2
@@ -222,18 +217,17 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ./artifacts/app-debug.apk
-          ./artifacts/app-release.apk
+          ./artifacts/*.apk
 
   notify-status:
     needs: [build-debug, build-release]
     runs-on: ubuntu-latest
     if: always()
-    
+
     steps:
     - name: Build Status Summary
       run: |
-        echo "## 📦 Build Status Report" >> $GITHUB_STEP_SUMMARY
+        echo "## Build Status Report" >> $GITHUB_STEP_SUMMARY
         echo "- Debug Build: ${{ needs.build-debug.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Release Build: ${{ needs.build-release.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Workflow Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

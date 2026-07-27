@@ -5,7 +5,7 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="${PROJECT_DIR}/dist"
 LOVE_FILE="${DIST_DIR}/apex-legends.love"
 ANDROID_DIR="${PROJECT_DIR}/android"
-WORK_DIR="${ANDROID_DIR}/love-android-sdl2"
+WORK_DIR="${ANDROID_DIR}/love-android"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -32,24 +32,34 @@ check_deps() {
 
 clone_love_android() {
   if [ -d "$WORK_DIR" ]; then
-    print_step "love-android-sdl2 already cloned"
+    print_step "love-android already cloned"
     return 0
   fi
-  print_step "Cloning love-android-sdl2..."
-  git clone --depth 1 https://github.com/love2d/love-android-sdl2.git "$WORK_DIR"
+  print_step "Cloning love-android..."
+  git clone --depth 1 --branch main https://github.com/love2d/love-android.git "$WORK_DIR"
+  rm -rf "$WORK_DIR/.git"
 }
 
 copy_game_assets() {
   print_step "Copying game to Android assets..."
-  mkdir -p "$WORK_DIR/app/src/main/assets"
-  cp "$LOVE_FILE" "$WORK_DIR/app/src/main/assets/game.love"
+  mkdir -p "$WORK_DIR/app/src/embed/assets"
+  cp "$LOVE_FILE" "$WORK_DIR/app/src/embed/assets/game.love"
 }
 
-configure_package() {
-  print_step "Configuring Android package..."
-  local PKG="com.apexlegends.space shooter"
-  sed -i "s/applicationId \".*\"/applicationId \"${PKG// /\\.}\"/" "$WORK_DIR/app/build.gradle" 2>/dev/null || true
-  sed -i 's/versionName ".*"/versionName "1.0.0"/' "$WORK_DIR/app/build.gradle" 2>/dev/null || true
+configure_project() {
+  print_step "Configuring Android project..."
+  cat > "$WORK_DIR/gradle.properties" << 'PROPERTIES'
+app.name=Apex Legends
+app.application_id=com.apexlegends.spaceshooter
+app.orientation=landscape
+app.version_code=1
+app.version_name=1.0.0
+android.enableJetifier=false
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+android.nonFinalResIds=true
+android.dependency.useConstraints=true
+PROPERTIES
 }
 
 build_apk() {
@@ -58,43 +68,19 @@ build_apk() {
   export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
   if [ -f "./gradlew" ]; then
     chmod +x gradlew
-    ./gradlew assembleRelease
+    ./gradlew assembleEmbedNoRecordDebug assembleEmbedNoRecordRelease 2>&1 | tee build.log
   else
-    print_err "Gradle wrapper not found in love-android-sdl2"
+    print_err "Gradle wrapper not found in love-android"
     return 1
   fi
 }
 
 copy_output() {
-  print_step "Copying APK to dist/..."
+  print_step "Copying APKs to dist/..."
   mkdir -p "$DIST_DIR"
   find "$WORK_DIR" -name "*.apk" -exec cp {} "$DIST_DIR/" \;
-  print_step "APK ready in dist/"
-}
-
-print_instructions() {
-  echo ""
-  echo "============================================"
-  echo "  Android Build"
-  echo "============================================"
-  echo ""
-  echo "  To set up manually without this script:"
-  echo ""
-  echo "  1. Clone love-android-sdl2:"
-  echo "     git clone https://github.com/love2d/love-android-sdl2.git"
-  echo ""
-  echo "  2. Place game.love in assets:"
-  echo "     cp dist/apex-legends.love love-android-sdl2/app/src/main/assets/game.love"
-  echo ""
-  echo "  3. Build with Gradle:"
-  echo "     cd love-android-sdl2"
-  echo "     ./gradlew assembleRelease"
-  echo ""
-  echo "  4. APK will be at:"
-  echo "     love-android-sdl2/app/build/outputs/apk/release/"
-  echo ""
-  echo "  NOTE: Requires Android SDK. Set ANDROID_HOME env var."
-  echo "============================================"
+  print_step "APKs ready in dist/:"
+  ls -la "$DIST_DIR"/*.apk 2>/dev/null || print_warn "No APK files found"
 }
 
 main() {
@@ -106,16 +92,10 @@ main() {
   check_deps || return 1
   clone_love_android || return 1
   copy_game_assets || return 1
-  configure_package || true
+  configure_project || return 1
 
-  if command -v java &> /dev/null; then
-    build_apk || print_warn "APK build failed (may need Android SDK)"
-    copy_output || true
-  else
-    print_warn "Java not found, skipping APK build"
-  fi
-
-  print_instructions
+  build_apk || return 1
+  copy_output || true
 }
 
 main

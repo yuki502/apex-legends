@@ -105,6 +105,12 @@ jobs:
           name: apex-legends-love
           path: dist
 
+      - name: Package .love archive (if missing)
+        run: |
+          if [ ! -f dist/apex-legends.love ]; then
+            zip -9 -r dist/apex-legends.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
+          fi
+
       - name: Build Android APK
         run: ./build.sh android
 
