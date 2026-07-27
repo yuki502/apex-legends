@@ -37,7 +37,7 @@ jobs:
       run: zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
     - name: Clone love-android
-      run: git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
+      run: git clone --depth 1 --recurse-submodules --shallow-submodules --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
 
     - name: Copy game files
       run: mkdir -p love-android/app/src/embed/assets && cp /tmp/game.love love-android/app/src/embed/assets/game.love
@@ -49,11 +49,14 @@ jobs:
       run: cd love-android && chmod +x gradlew && ./gradlew assembleEmbedNoRecordDebug 2>&1 | tee build-debug.log
       continue-on-error: true
 
+    - name: List APK files
+      run: find love-android -name "*.apk" 2>/dev/null || echo "No APK files found"
+
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-debug
-        path: love-android/app/build/outputs/apk/embedNoRecord/debug/*.apk
+        path: love-android/app/build/outputs/apk/**/*.apk
         retention-days: 30
 
     - name: Upload Build Errors (Debug)
@@ -88,7 +91,7 @@ jobs:
       run: zip -9 -r /tmp/game.love . -x ".git/*" ".github/*" "*.log" "dist/*" "android/*" "node_modules/*"
 
     - name: Clone love-android
-      run: git clone --depth 1 --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
+      run: git clone --depth 1 --recurse-submodules --shallow-submodules --branch main https://github.com/love2d/love-android.git love-android && rm -rf love-android/.git
 
     - name: Copy game files
       run: mkdir -p love-android/app/src/embed/assets && cp /tmp/game.love love-android/app/src/embed/assets/game.love
@@ -106,11 +109,14 @@ jobs:
       run: cd love-android && chmod +x gradlew && ./gradlew assembleEmbedNoRecordRelease 2>&1 | tee build-release.log
       continue-on-error: true
 
+    - name: List APK files
+      run: find love-android -name "*.apk" 2>/dev/null || echo "No APK files found"
+
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
       with:
         name: apex-legends-release
-        path: love-android/app/build/outputs/apk/embedNoRecord/release/*.apk
+        path: love-android/app/build/outputs/apk/**/*.apk
         retention-days: 30
 
     - name: Upload Build Errors (Release)

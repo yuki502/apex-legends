@@ -35,8 +35,8 @@ clone_love_android() {
     print_step "love-android already cloned"
     return 0
   fi
-  print_step "Cloning love-android..."
-  git clone --depth 1 --branch main https://github.com/love2d/love-android.git "$WORK_DIR"
+  print_step "Cloning love-android with submodules..."
+  git clone --depth 1 --recurse-submodules --shallow-submodules --branch main https://github.com/love2d/love-android.git "$WORK_DIR"
   rm -rf "$WORK_DIR/.git"
 }
 
