@@ -36,7 +36,7 @@ clone_love_android() {
     return 0
   fi
   print_step "Cloning love-android-sdl2..."
-  git clone --depth 1 --branch 2025 https://github.com/love2d/love-android-sdl2.git "$WORK_DIR"
+  git clone --depth 1 https://github.com/love2d/love-android-sdl2.git "$WORK_DIR"
 }
 
 copy_game_assets() {
